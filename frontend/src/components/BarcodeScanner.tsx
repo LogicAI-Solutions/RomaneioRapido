@@ -11,6 +11,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
     const scannerRef = useRef<Html5Qrcode | null>(null)
     const containerId = "reader"
     const [scanSuccess, setScanSuccess] = useState(false)
+    const [permissionError, setPermissionError] = useState(false)
     const isScanningRef = useRef(false)
 
     const stopScanner = async () => {
@@ -25,42 +26,50 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
 
     const startScanner = async () => {
         if (!scannerRef.current) return
+        setPermissionError(false)
 
         try {
-            await stopScanner()
+            // Explicitly request camera permissions first
+            const cameras = await Html5Qrcode.getCameras()
+            if (cameras && cameras.length > 0) {
+                await stopScanner()
 
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            }
-
-            await scannerRef.current.start(
-                { facingMode: "environment" },
-                config,
-                (decodedText) => {
-                    // Evitar múltiplas chamadas consecutivas
-                    if (isScanningRef.current) return
-                    isScanningRef.current = true
-
-                    console.log("CÓDIGO ENCONTRADO:", decodedText)
-                    setScanSuccess(true)
-
-                    // Feedback tátil
-                    if (navigator.vibrate) navigator.vibrate([100, 50, 100])
-
-                    // Mostra o sucesso por 1 segundo antes de fechar e processar
-                    setTimeout(() => {
-                        onScan(decodedText)
-                        stopScanner().then(onClose)
-                    }, 1000)
-                },
-                () => {
-                    // Ignora erros normais (quando nenhum código é achado no frame)
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
                 }
-            )
+
+                await scannerRef.current.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText) => {
+                        // Evitar múltiplas chamadas consecutivas
+                        if (isScanningRef.current) return
+                        isScanningRef.current = true
+
+                        console.log("CÓDIGO ENCONTRADO:", decodedText)
+                        setScanSuccess(true)
+
+                        // Feedback tátil
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100])
+
+                        // Mostra o sucesso por 1 segundo antes de fechar e processar
+                        setTimeout(() => {
+                            onScan(decodedText)
+                            stopScanner().then(onClose)
+                        }, 1000)
+                    },
+                    () => {
+                        // Ignora erros normais (quando nenhum código é achado no frame)
+                    }
+                )
+            } else {
+                setPermissionError(true)
+            }
         } catch (err) {
             console.error("FALHA AO INICIAR:", err)
+            setPermissionError(true)
         }
     }
 
@@ -127,8 +136,23 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                     </div>
                 </div>
 
-                <div className={`p-6 transition-colors duration-300 text-center ${scanSuccess ? 'bg-emerald-50' : 'bg-white'}`}>
-                    {!scanSuccess ? (
+                <div className={`p-6 transition-colors duration-300 text-center ${scanSuccess ? 'bg-emerald-50' : permissionError ? 'bg-red-50' : 'bg-white'}`}>
+                    {permissionError ? (
+                        <>
+                            <p className="text-[13px] text-red-600 font-bold mb-3">
+                                Permissão de câmera negada ou dispositivo não encontrado.
+                            </p>
+                            <p className="text-[11px] text-red-500/80 mb-4">
+                                Verifique as configurações do seu navegador ou celular e permita o acesso à câmera para usar o leitor.
+                            </p>
+                            <button
+                                onClick={startScanner}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-full text-xs font-bold transition-colors"
+                            >
+                                <RefreshCcw className="w-3.5 h-3.5" /> Tentar Novamente
+                            </button>
+                        </>
+                    ) : !scanSuccess ? (
                         <>
                             <button
                                 onClick={() => stopScanner().then(startScanner)}

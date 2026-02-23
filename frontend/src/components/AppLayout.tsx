@@ -40,8 +40,8 @@ export default function AppLayout() {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
                 {/* Logo */}
-                <div className="h-14 px-5 flex items-center gap-2.5 border-b border-gray-100">
-                    <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div className="h-14 px-5 flex items-center gap-2.5 border-b border-gray-100 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+                    <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 shadow-sm">
                         <Package className="w-3.5 h-3.5 text-white" />
                     </div>
                     <span className="text-sm font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
@@ -89,27 +89,36 @@ export default function AppLayout() {
                         Sair
                     </button>
                 </div>
-            </aside>
+            </aside >
 
             {/* Overlay mobile */}
-            {sidebarOpen && (
-                <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
-            )}
+            {
+                sidebarOpen && (
+                    <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
+                )
+            }
 
             {/* Main */}
             <div className="flex-1 md:ml-60">
                 {/* Top bar mobile */}
-                <header className="md:hidden h-14 bg-white border-b border-gray-100 px-4 flex items-center gap-3 sticky top-0 z-20">
-                    <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-gray-600">
-                        <Menu className="w-5 h-5" />
-                    </button>
-                    <span className="text-sm font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
+                <header className="md:hidden h-14 bg-white border-b border-gray-100 px-4 flex items-center justify-between sticky top-0 z-20">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-gray-600">
+                            <Menu className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+                        <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 shadow-sm">
+                            <Package className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
+                    </div>
                 </header>
 
                 <main className="p-5 md:p-8 max-w-7xl">
                     <Outlet />
                 </main>
             </div>
-        </div>
+        </div >
     )
 }

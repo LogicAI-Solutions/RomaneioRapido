@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { Package, Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2, Zap, BarChart3, ScanBarcode } from 'lucide-react'
+import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode } from 'lucide-react'
 
 export default function LoginPage() {
     const { login } = useAuth()
@@ -80,8 +80,8 @@ export default function LoginPage() {
             <div className="flex-1 flex flex-col">
                 {/* Mobile Header (Apenas em Mobile) */}
                 <div className="lg:hidden p-6 flex items-center justify-between border-b border-gray-50">
-                    <div className="flex items-center gap-2" onClick={() => navigate('/')}>
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/')}>
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-all duration-300">
                             <Package className="w-4 h-4 text-white" />
                         </div>
                         <span className="font-bold text-gray-900">RomaneioRapido</span>
