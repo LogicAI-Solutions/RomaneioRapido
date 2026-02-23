@@ -1,0 +1,49 @@
+from sqlalchemy.orm import Session
+from backend.models.inventory import InventoryMovement, MovementType
+from backend.models.products import Product
+from backend.schemas.inventory import InventoryMovementCreate
+
+
+def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int = None):
+    # Criar o registro de movimentação
+    db_movement = InventoryMovement(
+        **movement.model_dump(),
+        created_by=user_id
+    )
+    db.add(db_movement)
+
+    # Atualizar o estoque do produto
+    product = db.query(Product).filter(Product.id == movement.product_id).first()
+    if product:
+        if movement.movement_type == MovementType.IN:
+            product.stock_quantity += movement.quantity
+        elif movement.movement_type == MovementType.OUT:
+            product.stock_quantity -= movement.quantity
+        elif movement.movement_type == MovementType.ADJUSTMENT:
+            product.stock_quantity = movement.quantity
+
+    db.commit()
+    db.refresh(db_movement)
+    return db_movement
+
+
+def get_movements(db: Session, product_id: int = None, skip: int = 0, limit: int = 100):
+    query = db.query(InventoryMovement)
+    if product_id:
+        query = query.filter(InventoryMovement.product_id == product_id)
+    return query.order_by(InventoryMovement.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def get_stock_levels(db: Session):
+    products = db.query(Product).filter(Product.is_active == True).all()
+    levels = []
+    for product in products:
+        levels.append({
+            "product_id": product.id,
+            "product_name": product.name,
+            "barcode": product.barcode,
+            "stock_quantity": product.stock_quantity,
+            "min_stock": product.min_stock,
+            "is_low_stock": product.stock_quantity <= product.min_stock
+        })
+    return levels

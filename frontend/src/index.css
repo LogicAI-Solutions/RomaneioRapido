@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Limpeza do html5-qrcode */
+#reader__status_span {
+    display: none !important;
+}
+
+#reader__dashboard_section_csr {
+    display: none !important;
+}
+
+#reader video {
+    border-radius: 1rem !important;
+    object-fit: cover !important;
+}
+
+#reader button {
+    background-color: #2563eb !important;
+    /* blue-600 */
+    color: white !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    border: none !important;
+    margin-top: 1rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+#reader button:hover {
+    background-color: #1d4ed8 !important;
+    /* blue-700 */
+}
+
+#reader img {
+    display: none !important;
+}
+
+/* Esconder o link "Powered by..." */
+#reader a {
+    display: none !important;
+}
+
+#reader div[style*="text-align: center"] {
+    display: none !important;
+}

@@ -1,0 +1,70 @@
+from sqlalchemy.orm import Session
+from backend.models.products import Product
+from backend.schemas.products import ProductCreate, ProductUpdate
+
+
+def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = None, category_id: int = None):
+    query = db.query(Product).filter(Product.is_active == True)
+    if search:
+        query = query.filter(
+            (Product.name.ilike(f"%{search}%")) |
+            (Product.barcode.ilike(f"%{search}%")) |
+            (Product.sku.ilike(f"%{search}%"))
+        )
+    if category_id:
+        query = query.filter(Product.category_id == category_id)
+    return query.order_by(Product.name.asc()).offset(skip).limit(limit).all()
+
+
+def count_products(db: Session, search: str = None, category_id: int = None):
+    query = db.query(Product).filter(Product.is_active == True)
+    if search:
+        query = query.filter(
+            (Product.name.ilike(f"%{search}%")) |
+            (Product.barcode.ilike(f"%{search}%")) |
+            (Product.sku.ilike(f"%{search}%"))
+        )
+    if category_id:
+        query = query.filter(Product.category_id == category_id)
+    return query.count()
+
+
+def get_product(db: Session, product_id: int):
+    return db.query(Product).filter(Product.id == product_id).first()
+
+
+def get_product_by_barcode(db: Session, barcode: str):
+    return db.query(Product).filter(Product.barcode == barcode).first()
+
+
+def get_product_by_sku(db: Session, sku: str):
+    return db.query(Product).filter(Product.sku == sku).first()
+
+
+def create_product(db: Session, product: ProductCreate):
+    db_product = Product(**product.model_dump())
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+
+def update_product(db: Session, product_id: int, product: ProductUpdate):
+    db_product = db.query(Product).filter(Product.id == product_id).first()
+    if not db_product:
+        return None
+    update_data = product.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_product, key, value)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+
+def delete_product(db: Session, product_id: int):
+    db_product = db.query(Product).filter(Product.id == product_id).first()
+    if not db_product:
+        return None
+    db.delete(db_product)
+    db.commit()
+    return db_product

@@ -1,0 +1,56 @@
+from datetime import timedelta
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
+from backend.core.database import get_db
+from backend.core.security import verify_password, create_access_token, get_current_user
+from backend.core.config import settings
+from backend.core.limiter import limiter
+from backend.crud.users import get_user_by_email
+from backend.schemas.auth import Token, LoginRequest, UserResponse
+from backend.models.users import User
+from backend.config.logger import get_dynamic_logger
+
+logger = get_dynamic_logger("auth")
+
+router = APIRouter(prefix="/auth")
+
+
+@router.post("/login", response_model=Token)
+@limiter.limit("15/minute")
+def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
+    try:
+        user = get_user_by_email(db, login_data.email)
+        if not user or not verify_password(login_data.password, user.hashed_password):
+            logger.warning(f"Falha de login: credenciais inválidas para o email {login_data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email ou senha incorretos",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not user.is_active:
+            logger.warning(f"Falha de login: usuário inativo {login_data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuário desativado"
+            )
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        logger.info(f"Login bem-sucedido: usuário {user.email}")
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro inesperado no login para {login_data.email}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.get("/me", response_model=UserResponse)
+@limiter.limit("120/minute")
+def get_me(request: Request, current_user: User = Depends(get_current_user)):
+    try:
+        return current_user
+    except Exception as e:
+        logger.error(f"Erro ao buscar dados do usuário: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")

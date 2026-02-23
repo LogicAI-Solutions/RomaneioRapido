@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib
+bcrypt==4.0.1
+python-multipart
+python-dotenv
+psycopg2-binary
+pytest
+httpx
+portalocker
+slowapi
+Pillow
