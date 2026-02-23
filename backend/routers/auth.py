@@ -2,11 +2,11 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import verify_password, create_access_token, get_current_user
+from backend.core.security import verify_password, create_access_token, get_current_user, get_password_hash
 from backend.core.config import settings
 from backend.core.limiter import limiter
 from backend.crud.users import get_user_by_email
-from backend.schemas.auth import Token, LoginRequest, UserResponse
+from backend.schemas.auth import Token, LoginRequest, UserResponse, UserUpdate
 from backend.models.users import User
 from backend.config.logger import get_dynamic_logger
 
@@ -53,4 +53,31 @@ def get_me(request: Request, current_user: User = Depends(get_current_user)):
         return current_user
     except Exception as e:
         logger.error(f"Erro ao buscar dados do usuário: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.put("/me", response_model=UserResponse)
+@limiter.limit("60/minute")
+def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    try:
+        if update_data.full_name is not None:
+            current_user.full_name = update_data.full_name
+        if update_data.email is not None:
+            current_user.email = update_data.email
+        if update_data.phone is not None:
+            current_user.phone = update_data.phone
+        if update_data.store_name is not None:
+            current_user.store_name = update_data.store_name
+        if update_data.photo_base64 is not None:
+            current_user.photo_base64 = update_data.photo_base64
+        if update_data.password:
+            current_user.hashed_password = get_password_hash(update_data.password)
+            
+        db.commit()
+        db.refresh(current_user)
+        logger.info(f"Usuário {current_user.email} atualizou o perfil.")
+        return current_user
+    except Exception as e:
+        logger.error(f"Erro ao atualizar usuário: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

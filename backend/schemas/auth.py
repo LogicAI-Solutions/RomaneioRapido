@@ -16,6 +16,9 @@ class LoginRequest(BaseModel):
 class UserBase(BaseModel):
     email: str
     full_name: str
+    phone: Optional[str] = None
+    store_name: Optional[str] = None
+    photo_base64: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -25,6 +28,9 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
+    phone: Optional[str] = None
+    store_name: Optional[str] = None
+    photo_base64: Optional[str] = None
     plan_id: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None

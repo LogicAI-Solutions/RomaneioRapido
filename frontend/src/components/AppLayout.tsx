@@ -9,7 +9,8 @@ import {
     LogOut,
     Menu,
     X,
-    Crown
+    Crown,
+    User as UserIcon
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -73,14 +74,21 @@ export default function AppLayout() {
                 {/* User */}
                 <div className="px-3 py-4 border-t border-gray-100">
                     <div className="flex items-center gap-3 px-3 mb-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600">
-                            {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 overflow-hidden shrink-0">
+                            {user?.photo_base64 ? <img src={user.photo_base64} alt="Avatar" className="w-full h-full object-cover" /> : user?.full_name?.charAt(0)?.toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-gray-800 truncate">{user?.full_name}</p>
                             <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
                         </div>
                     </div>
+                    <button
+                        onClick={() => { navigate('/perfil'); setSidebarOpen(false) }}
+                        className="flex items-center gap-2 px-3 py-2 w-full text-xs font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors mb-1"
+                    >
+                        <UserIcon className="w-3.5 h-3.5" />
+                        Meu Perfil
+                    </button>
                     <button
                         onClick={handleLogout}
                         className="flex items-center gap-2 px-3 py-2 w-full text-xs font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"

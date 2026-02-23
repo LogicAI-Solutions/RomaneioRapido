@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { toast } from 'react-hot-toast'
 import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check } from 'lucide-react'
 
 interface Category {
@@ -69,8 +70,9 @@ export default function CategoriesPage() {
             }
             setModalOpen(false)
             fetchCategories()
+            toast.success('Categoria salva com sucesso!')
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Erro ao salvar categoria')
+            toast.error(err.response?.data?.detail || 'Erro ao salvar categoria')
         } finally {
             setSaving(false)
         }
@@ -107,9 +109,10 @@ export default function CategoriesPage() {
             setIsReordering(false)
             setReorderList([])
             fetchCategories()
+            toast.success('Nova ordem salva com sucesso!')
         } catch (err) {
             console.error('Erro ao salvar ordem:', err)
-            alert('Erro ao salvar a nova ordem')
+            toast.error('Erro ao salvar a nova ordem')
         } finally {
             setSavingOrder(false)
         }

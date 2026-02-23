@@ -50,7 +50,7 @@ export default function LandingPage() {
                             Login
                         </button>
                         <button
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate('/cadastro')}
                             className="h-9 px-5 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             Experimentar
@@ -71,7 +71,7 @@ export default function LandingPage() {
                         </nav>
                         <div className="flex gap-3 pt-2">
                             <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-medium border border-gray-200 rounded-lg text-gray-700">Login</button>
-                            <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg">Experimentar</button>
+                            <button onClick={() => navigate('/cadastro')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg">Experimentar</button>
                         </div>
                     </div>
                 )}
@@ -313,7 +313,7 @@ export default function LandingPage() {
                         </div>
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {PLANS.map((plan, i) => (
+                            {PLANS.filter(p => !p.hidden).map((plan, i) => (
                                 <div
                                     key={i}
                                     className={`relative p-8 rounded-[24px] border transition-all duration-300 ${plan.highlight
@@ -338,7 +338,7 @@ export default function LandingPage() {
                                     </div>
 
                                     <button
-                                        onClick={() => navigate('/login')}
+                                        onClick={() => navigate('/cadastro')}
                                         className={`w-full py-4 rounded-[10px] font-bold text-sm transition-all duration-200 mb-8 ${plan.highlight
                                             ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
                                             : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50'

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import api from '../services/api'
+import { toast } from 'react-hot-toast'
 import {
     Plus,
     Search,
@@ -246,8 +247,9 @@ export default function ProductsPage() {
 
             setModalOpen(false)
             fetchProducts()
+            toast.success('Produto salvo com sucesso!')
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Erro ao salvar produto')
+            toast.error(err.response?.data?.detail || 'Erro ao salvar produto')
         } finally {
             setSaving(false)
         }
@@ -257,8 +259,10 @@ export default function ProductsPage() {
         try {
             await api.delete(`/products/${id}`)
             setDeleteConfirm(null)
+            toast.success('Produto excluído com sucesso')
             fetchProducts()
-        } catch (err) {
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao deletar produto')
             console.error('Erro ao deletar produto:', err)
         }
     }
@@ -457,7 +461,7 @@ export default function ProductsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
                     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-2xl">
+                        <div className="sticky top-0 z-10 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-2xl">
                             <h2 className="text-base font-bold text-gray-900">
                                 {editingProduct ? 'Editar Produto' : 'Novo Produto'}
                             </h2>

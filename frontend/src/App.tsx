@@ -4,11 +4,14 @@ import LoginPage from './pages/LoginPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import ProductsPage from './pages/ProductsPage'
+import SignupPage from './pages/SignupPage'
 import CategoriesPage from './pages/CategoriesPage'
 import CategoryProductsPage from './pages/CategoryProductsPage'
 import RomaneioPage from './pages/RomaneioPage'
 import PlansPage from './pages/PlansPage'
+import ProfilePage from './pages/ProfilePage'
 import AppLayout from './components/AppLayout'
+import { Toaster } from 'react-hot-toast'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -48,6 +51,11 @@ function AppRoutes() {
           <LoginPage />
         </PublicRoute>
       } />
+      <Route path="/cadastro" element={
+        <PublicRoute>
+          <SignupPage />
+        </PublicRoute>
+      } />
 
       {/* Rotas protegidas com layout */}
       <Route element={
@@ -61,6 +69,7 @@ function AppRoutes() {
         <Route path="/categorias/:id" element={<CategoryProductsPage />} />
         <Route path="/romaneio" element={<RomaneioPage />} />
         <Route path="/planos" element={<PlansPage />} />
+        <Route path="/perfil" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -71,6 +80,7 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>

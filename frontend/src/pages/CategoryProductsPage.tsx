@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { toast } from 'react-hot-toast'
 import {
     ArrowLeft,
     Plus,
@@ -216,8 +217,9 @@ export default function CategoryProductsPage() {
 
             setModalOpen(false)
             fetchProducts()
+            toast.success('Produto salvo com sucesso!')
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Erro ao salvar produto')
+            toast.error(err.response?.data?.detail || 'Erro ao salvar produto')
         } finally {
             setSaving(false)
         }

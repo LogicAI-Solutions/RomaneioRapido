@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import api from '../services/api'
+import { toast } from 'react-hot-toast'
 import {
     ScanBarcode,
     Plus,
@@ -206,14 +207,14 @@ export default function RomaneioPage() {
                 // No caso do romaneio a Busca Esperta já faz esse trabalho. 
                 // Então apenas avisamos
                 setCameraOpen(false)
-                window.alert(`CÓDIGO LIDO: ${code}\n\nEncontramos múltiplos produtos para esta busca. \nPor favor, digite o nome no campo para escolher a variação correta.`)
+                toast.error(`CÓDIGO LIDO: ${code}\nEncontramos múltiplos produtos para esta busca. Por favor, digite o nome no campo para escolher a variação correta.`, { duration: 6000 })
             } else {
                 setCameraOpen(false)
-                window.alert(`CÓDIGO LIDO: ${code}\n\nEste produto ainda não está cadastrado no sistema.\nVá para a tela de 'Produtos' para criar o cadastro dele.`)
+                toast.error(`CÓDIGO LIDO: ${code}\nEste produto ainda não está cadastrado no sistema. Vá para a tela de 'Produtos' para criar o cadastro dele.`, { duration: 6000 })
             }
         } catch (error) {
             setCameraOpen(false)
-            window.alert(`CÓDIGO LIDO: ${code}\n\nEste produto ainda não está cadastrado no sistema.\nVá para a tela de 'Produtos' para criar o cadastro dele.`)
+            toast.error(`CÓDIGO LIDO: ${code}\nEste produto ainda não está cadastrado no sistema. Vá para a tela de 'Produtos' para criar o cadastro dele.`, { duration: 6000 })
         }
     }
 
@@ -244,9 +245,10 @@ export default function RomaneioPage() {
 
             // Exibe modal de exportação ao invés de limpar a tela direto
             setShowExportModal(true)
+            toast.success('Romaneio registrado com sucesso!')
 
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Erro ao registrar movimentações do romaneio!')
+            toast.error(err.response?.data?.detail || 'Erro ao registrar movimentações do romaneio!')
         } finally {
             setSubmitting(false)
         }
@@ -630,7 +632,7 @@ export default function RomaneioPage() {
                     </div>
 
                     {/* Paginação */}
-                    {totalEstoquePages > 1 && (
+                    {totalEstoquePages > 0 && (
                         <div className="p-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-sm">
                             <span className="text-gray-500 font-medium">
                                 Página <strong className="text-gray-900">{estoquePage}</strong> de {totalEstoquePages}

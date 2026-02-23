@@ -5,6 +5,7 @@ import { PLANS } from '../constants/plans'
 import type { Plan } from '../constants/plans'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { toast } from 'react-hot-toast'
 
 export default function PlansPage() {
     const navigate = useNavigate()
@@ -42,7 +43,7 @@ export default function PlansPage() {
             // Recarregar a página para atualizar o contexto e o uso
             window.location.reload()
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Erro ao atualizar assinatura')
+            toast.error(err.response?.data?.detail || 'Erro ao atualizar assinatura')
         } finally {
             setIsSubscribing(null)
         }

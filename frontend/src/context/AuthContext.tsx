@@ -9,6 +9,9 @@ interface User {
     is_admin: boolean
     plan_id: string
     is_active: boolean
+    photo_base64?: string | null
+    phone?: string | null
+    store_name?: string | null
 }
 
 interface AuthContextType {
