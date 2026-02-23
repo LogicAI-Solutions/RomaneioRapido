@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./backend/
 
 ENV TESTING=1
+ENV SECRET_KEY=test_secret_key_only_for_build
 RUN python -m pytest backend/tests/test_routes.py -v
 ENV TESTING=0
 

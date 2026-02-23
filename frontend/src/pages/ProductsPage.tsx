@@ -33,7 +33,7 @@ interface Product {
     min_stock: number
     category_id: number | null
     unit: string
-    image_url: string | null
+    image_base64: string | null
     is_active: boolean
 }
 
@@ -49,7 +49,6 @@ export default function ProductsPage() {
     const [cameraOpen, setCameraOpen] = useState(false)
 
     // Image Upload State
-    const [imageFile, setImageFile] = useState<File | Blob | null>(null)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -72,10 +71,9 @@ export default function ProductsPage() {
         min_stock: '',
         unit: 'UN',
         category_id: '',
+        image_base64: ''
     })
 
-    // API Base URL para imagens
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
     const fetchProducts = async (p: number = page) => {
         try {
@@ -170,9 +168,9 @@ export default function ProductsPage() {
             stock_quantity: '0',
             min_stock: '0',
             unit: 'UN',
-            category_id: ''
+            category_id: '',
+            image_base64: ''
         })
-        setImageFile(null)
         setImagePreview(null)
         setCropImageSrc(null)
         setModalOpen(true)
@@ -191,9 +189,9 @@ export default function ProductsPage() {
             min_stock: String(p.min_stock),
             unit: p.unit || 'UN',
             category_id: p.category_id ? String(p.category_id) : '',
+            image_base64: p.image_base64 || ''
         })
-        setImageFile(null)
-        setImagePreview(p.image_url ? `${API_URL}${p.image_url}` : null)
+        setImagePreview(p.image_base64 || null)
         setCropImageSrc(null)
         setModalOpen(true)
     }
@@ -212,8 +210,13 @@ export default function ProductsPage() {
     }
 
     const handleCropComplete = (blob: Blob) => {
-        setImageFile(blob)
-        setImagePreview(URL.createObjectURL(blob))
+        const reader = new FileReader()
+        reader.onloadend = () => {
+            const base64String = reader.result as string
+            setForm(prev => ({ ...prev, image_base64: base64String }))
+            setImagePreview(base64String)
+        }
+        reader.readAsDataURL(blob)
         setCropImageSrc(null)
     }
 
@@ -232,24 +235,13 @@ export default function ProductsPage() {
                 min_stock: parseFloat(form.min_stock) || 0,
                 unit: form.unit,
                 category_id: form.category_id ? parseInt(form.category_id) : null,
+                image_base64: form.image_base64 || null
             }
-
-            let productId = editingProduct?.id
 
             if (editingProduct) {
-                await api.put(`/products/${productId}`, payload)
+                await api.put(`/products/${editingProduct.id}`, payload)
             } else {
-                const res = await api.post('/products/', payload)
-                productId = res.data.id
-            }
-
-            // Upload de imagem se houver
-            if (imageFile && productId) {
-                const formData = new FormData()
-                formData.append('file', imageFile, 'product.webp')
-                await api.post(`/products/${productId}/image`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                })
+                await api.post('/products/', payload)
             }
 
             setModalOpen(false)
@@ -352,8 +344,8 @@ export default function ProductsPage() {
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
-                                                        {p.image_url ? (
-                                                            <img src={`${API_URL}${p.image_url}`} alt={p.name} className="w-full h-full object-cover" />
+                                                        {p.image_base64 ? (
+                                                            <img src={p.image_base64} alt={p.name} className="w-full h-full object-cover" />
                                                         ) : (
                                                             <ImageIcon className="w-4 h-4 text-gray-400" />
                                                         )}

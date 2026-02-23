@@ -14,7 +14,7 @@ class ProductBase(BaseModel):
     min_stock: float = 0.0
     unit: str = "UN"
     category_id: Optional[int] = None
-    image_url: Optional[str] = None
+    image_base64: Optional[str] = None
     is_active: bool = True
 
 
@@ -33,7 +33,7 @@ class ProductUpdate(BaseModel):
     min_stock: Optional[float] = None
     unit: Optional[str] = None
     category_id: Optional[int] = None
-    image_url: Optional[str] = None
+    image_base64: Optional[str] = None
     is_active: Optional[bool] = None
 
 
