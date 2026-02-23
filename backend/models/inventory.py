@@ -23,3 +23,7 @@ class InventoryMovement(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     product = relationship("Product", back_populates="movements")
+
+    @property
+    def product_name(self):
+        return self.product.name if self.product else "Produto Excluído"

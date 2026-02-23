@@ -22,7 +22,7 @@ def create_movement(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        logger.info(f"Usuário {current_user.email} registrou movimentação de {movement.quantity} para o produto ID={movement.product_id} do tipo {movement.type}")
+        logger.info(f"Usuário {current_user.email} registrou movimentação de {movement.quantity} para o produto ID={movement.product_id} do tipo {movement.movement_type}")
         return crud.create_movement(db, movement, user_id=current_user.id)
     except HTTPException:
         raise

@@ -19,6 +19,7 @@ class InventoryMovementResponse(InventoryMovementBase):
     id: int
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
+    product_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -31,6 +32,7 @@ class StockLevel(BaseModel):
     stock_quantity: float
     min_stock: float
     unit: str = "UN"
+    price: float = 0.0
     is_low_stock: bool
 
     class Config:

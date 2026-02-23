@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import api from '../services/api'
 import {
     ScanBarcode,
-    ArrowUpFromLine,
-    History,
     Plus,
-    X,
     AlertTriangle,
-    Camera
+    Camera,
+    ShoppingCart,
+    Trash2,
+    CheckCircle2
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
+import RomaneioExportModal from '../components/RomaneioExportModal'
+import type { CartItem } from '../components/RomaneioExportModal'
+import { isIntegerUnit } from '../utils/units'
 
 interface Product {
     id: number
@@ -19,6 +22,7 @@ interface Product {
     stock_quantity: number
     min_stock: number
     unit: string
+    price: number
 }
 
 interface StockLevel {
@@ -28,28 +32,31 @@ interface StockLevel {
     stock_quantity: number
     min_stock: number
     unit: string
+    price: number
     is_low_stock: boolean
 }
 
 export default function RomaneioPage() {
     const [activeTab, setActiveTab] = useState<'romaneio' | 'movimentacoes' | 'estoque'>('romaneio')
     const [barcodeInput, setBarcodeInput] = useState('')
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-    const [movementType] = useState<'IN' | 'OUT'>('OUT')
-    const [quantity, setQuantity] = useState('1')
-    const [notes, setNotes] = useState('')
+
+    // Novo Formato "Carrinho"
+    const [cartItems, setCartItems] = useState<CartItem[]>([])
+    const [customerName, setCustomerName] = useState('')
+    const [showExportModal, setShowExportModal] = useState(false)
+
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
-    const [searchResults, setSearchResults] = useState<Product[]>([])
-    const [showSearch, setShowSearch] = useState(false)
     const [cameraOpen, setCameraOpen] = useState(false)
     const [dropdownResults, setDropdownResults] = useState<Product[]>([])
     const [isSearchingText, setIsSearchingText] = useState(false)
-    const [lastMovements, setLastMovements] = useState<Array<{ product: string, type: string, qty: number, time: string, unit: string }>>([])
     const [movements, setMovements] = useState<any[]>([])
     const [stockLevels, setStockLevels] = useState<StockLevel[]>([])
 
-    // fetchProducts foi removido pois a busca agora acontece via Busca Esperta (autocomplete)
+    // Filtros e Paginação do Estoque
+    const [estoqueSearch, setEstoqueSearch] = useState('')
+    const [estoquePage, setEstoquePage] = useState(1)
+    const ESTOQUE_PER_PAGE = 20
 
     const fetchMovements = async () => {
         setLoading(true)
@@ -77,13 +84,17 @@ export default function RomaneioPage() {
 
     useEffect(() => {
         if (activeTab === 'movimentacoes') fetchMovements()
-        if (activeTab === 'estoque') fetchStockLevels()
+        if (activeTab === 'estoque') {
+            setEstoquePage(1)
+            setEstoqueSearch('')
+            fetchStockLevels()
+        }
     }, [activeTab])
 
     // Busca Esperta: Autocomplete em tempo real ao digitar
     useEffect(() => {
         const timer = setTimeout(async () => {
-            if (barcodeInput.trim().length >= 2 && !selectedProduct) {
+            if (barcodeInput.trim().length >= 2) {
                 setIsSearchingText(true)
                 try {
                     const res = await api.get('/products/', { params: { search: barcodeInput.trim() } })
@@ -98,7 +109,7 @@ export default function RomaneioPage() {
             }
         }, 400)
         return () => clearTimeout(timer)
-    }, [barcodeInput, selectedProduct])
+    }, [barcodeInput])
 
     // Suporte para Scanner USB (Bip) Global
     useEffect(() => {
@@ -133,13 +144,46 @@ export default function RomaneioPage() {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
+    const addToCart = (product: Product) => {
+        setCartItems(prev => {
+            const existing = prev.find(item => item.id === product.id)
+            if (existing) {
+                return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
+            }
+            return [{ id: product.id, name: product.name, barcode: product.barcode, quantity: 1, unit: product.unit, price: product.price || 0 }, ...prev]
+        })
+    }
+
+    const updateCartQuantity = (id: number, quant: string, unit: string) => {
+        let val = parseFloat(quant)
+        if (isNaN(val) || val < 0) return
+
+        if (isIntegerUnit(unit)) {
+            val = Math.floor(val)
+        }
+
+        setCartItems(prev => prev.map(item => item.id === id ? { ...item, quantity: val } : item))
+    }
+
+    const handleQuantityBlur = (id: number) => {
+        setCartItems(prev => prev.filter(item => {
+            if (item.id === id && (item.quantity <= 0 || isNaN(item.quantity))) {
+                return false
+            }
+            return true
+        }))
+    }
+
+    const removeFromCart = (id: number) => {
+        setCartItems(prev => prev.filter(item => item.id !== id))
+    }
+
     const handleBarcodeScan = async (code: string) => {
         try {
             const res = await api.get(`/products/barcode/${code.trim()}`)
             if (res.data) {
                 const productInfo = Array.isArray(res.data) ? res.data[0] : res.data
-                setSelectedProduct(productInfo)
-                setShowSearch(false)
+                addToCart(productInfo)
                 setCameraOpen(false)
 
                 // Haptic feedback (vibração leve) para USB também
@@ -154,15 +198,15 @@ export default function RomaneioPage() {
             const res = await api.get('/products/', { params: { search: code.trim() } })
             const items = res.data.items || res.data
             if (items.length === 1) {
-                setSelectedProduct(items[0])
-                setShowSearch(false)
+                addToCart(items[0])
                 setCameraOpen(false)
                 if (navigator.vibrate) navigator.vibrate(100)
             } else if (items.length > 1) {
-                setSearchResults(items)
-                setShowSearch(true)
+                // Se encontrar múltiplos, vamos adicionar todos ao dropdown logic ou lidar com alert
+                // No caso do romaneio a Busca Esperta já faz esse trabalho. 
+                // Então apenas avisamos
                 setCameraOpen(false)
-                if (navigator.vibrate) navigator.vibrate(100)
+                window.alert(`CÓDIGO LIDO: ${code}\n\nEncontramos múltiplos produtos para esta busca. \nPor favor, digite o nome no campo para escolher a variação correta.`)
             } else {
                 setCameraOpen(false)
                 window.alert(`CÓDIGO LIDO: ${code}\n\nEste produto ainda não está cadastrado no sistema.\nVá para a tela de 'Produtos' para criar o cadastro dele.`)
@@ -181,35 +225,64 @@ export default function RomaneioPage() {
         }
     }
 
-    const handleMovementSubmit = async () => {
-        if (!selectedProduct) return
+    const handleFinalizeRomaneio = async () => {
+        if (cartItems.length === 0) return
         setSubmitting(true)
+
         try {
-            await api.post('/inventory/movements', {
-                product_id: selectedProduct.id,
-                quantity: parseFloat(quantity),
-                movement_type: movementType,
-                notes: notes || null,
-            })
+            // Envia cada item do carrinho como uma movimentação de SAÍDA individual
+            // Ideal seria ter um endpoint em lote (bulk), mas aqui fazemos sequencialmente de forma simples.
+            // Para sistemas em produção pesada, recomenda-se criar o endpoint bulk no backend.
+            for (const item of cartItems) {
+                await api.post('/inventory/movements', {
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    movement_type: 'OUT',
+                    notes: customerName ? `Romaneio: ${customerName} ` : 'Romaneio Rápido',
+                })
+            }
 
-            setLastMovements(prev => [{
-                product: selectedProduct.name,
-                type: movementType,
-                qty: parseFloat(quantity),
-                unit: selectedProduct.unit,
-                time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            }, ...prev].slice(0, 10))
+            // Exibe modal de exportação ao invés de limpar a tela direto
+            setShowExportModal(true)
 
-            setSelectedProduct(null)
-            setQuantity('1')
-            setNotes('')
-            setBarcodeInput('')
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Erro ao registrar movimentação')
+            alert(err.response?.data?.detail || 'Erro ao registrar movimentações do romaneio!')
         } finally {
             setSubmitting(false)
         }
     }
+
+    const resetCart = () => {
+        setCartItems([])
+        setCustomerName('')
+        setShowExportModal(false)
+        setBarcodeInput('')
+    }
+
+    const filteredAndSortedStock = useMemo(() => {
+        let result = stockLevels
+
+        if (estoqueSearch.trim()) {
+            const query = estoqueSearch.toLowerCase()
+            result = result.filter(s =>
+                s.product_name.toLowerCase().includes(query) ||
+                (s.barcode && s.barcode.toLowerCase().includes(query))
+            )
+        }
+
+        // Ordenar: primeiro o que está baixo, depois alfabético
+        return result.sort((a, b) => {
+            if (a.is_low_stock && !b.is_low_stock) return -1
+            if (!a.is_low_stock && b.is_low_stock) return 1
+            return a.product_name.localeCompare(b.product_name)
+        })
+    }, [stockLevels, estoqueSearch])
+
+    const totalEstoquePages = Math.ceil(filteredAndSortedStock.length / ESTOQUE_PER_PAGE)
+    const currentEstoqueItems = useMemo(() => {
+        const start = (estoquePage - 1) * ESTOQUE_PER_PAGE
+        return filteredAndSortedStock.slice(start, start + ESTOQUE_PER_PAGE)
+    }, [filteredAndSortedStock, estoquePage])
 
     return (
         <div>
@@ -241,157 +314,197 @@ export default function RomaneioPage() {
             </div>
 
             {activeTab === 'romaneio' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Scan Section */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm h-fit">
-                        <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <Plus className="w-4 h-4 text-blue-600" />
-                            Nova Movimentação
-                        </h2>
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6">
+                    {/* LEFTSIDE: BARCODE + CARRINHO */}
+                    <div className="flex flex-col gap-6">
 
-                        {/* Barcode Input */}
-                        <div className="flex gap-2 mb-4">
-                            <div className="relative flex-1">
-                                <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                        {/* Header do Romaneio */}
+                        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <Plus className="w-4 h-4 text-blue-600" />
+                                Montar Romaneio
+                            </h2>
+
+                            <div className="mb-4">
+                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Cliente / Destino (Opcional)</label>
                                 <input
                                     type="text"
-                                    placeholder="Bip do código ou digite o nome do produto..."
-                                    value={barcodeInput}
-                                    onChange={(e) => setBarcodeInput(e.target.value)}
-                                    onKeyDown={handleBarcodeKeyDown}
-                                    autoFocus
-                                    className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-300 font-medium"
+                                    placeholder="Nome do cliente ou número do pedido"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                    className="w-full h-11 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 text-gray-900 font-semibold"
                                 />
-
-                                {/* Dropdown de Busca Esperta */}
-                                {(dropdownResults.length > 0 || isSearchingText) && !selectedProduct && barcodeInput.trim().length >= 2 && (
-                                    <div className="absolute z-50 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1">
-                                        {isSearchingText ? (
-                                            <div className="p-4 text-center text-sm text-gray-400 font-medium animate-pulse">Buscando produto...</div>
-                                        ) : dropdownResults.map(p => (
-                                            <button
-                                                key={p.id}
-                                                onClick={() => {
-                                                    setSelectedProduct(p)
-                                                    setBarcodeInput('')
-                                                    setDropdownResults([])
-                                                }}
-                                                className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between"
-                                            >
-                                                <div className="min-w-0 pr-4">
-                                                    <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-                                                    <p className="text-[10px] text-gray-400 font-mono truncate">{p.barcode || p.sku || 'Sem Cód.'}</p>
-                                                </div>
-                                                <div className="text-right shrink-0">
-                                                    <p className="text-xs font-bold text-gray-700">{p.stock_quantity}</p>
-                                                    <p className="text-[10px] text-gray-300 font-medium uppercase">{p.unit}</p>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
-                            <button
-                                onClick={() => setCameraOpen(true)}
-                                className="h-11 px-3 bg-white border border-gray-200 text-gray-400 hover:text-blue-600 rounded-xl transition-all flex items-center justify-center shrink-0"
-                                title="Usar câmera"
-                            >
-                                <Camera className="w-5 h-5" />
-                            </button>
-                        </div>
 
-                        {/* Selected Product Form */}
-                        {selectedProduct ? (
-                            <div className="bg-blue-50/30 rounded-xl border border-blue-100 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="flex items-start justify-between mb-1">
-                                    <p className="text-sm font-bold text-blue-900">{selectedProduct.name}</p>
-                                    <button onClick={() => setSelectedProduct(null)} className="p-1 text-blue-400 hover:text-blue-600">
-                                        <X className="w-4 h-4" />
+                            {/* Barcode Input */}
+                            <div>
+                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Adicionar Produto</label>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                        <input
+                                            type="text"
+                                            placeholder="Bipe o código ou digite o nome..."
+                                            value={barcodeInput}
+                                            onChange={(e) => setBarcodeInput(e.target.value)}
+                                            onKeyDown={handleBarcodeKeyDown}
+                                            autoFocus
+                                            className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 font-medium"
+                                        />
+
+                                        {/* Dropdown de Busca Esperta */}
+                                        {(dropdownResults.length > 0 || isSearchingText) && barcodeInput.trim().length >= 2 && (
+                                            <div className="absolute z-50 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1">
+                                                {isSearchingText ? (
+                                                    <div className="p-4 text-center text-sm text-gray-400 font-medium animate-pulse">Buscando produto...</div>
+                                                ) : dropdownResults.map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        onClick={() => {
+                                                            addToCart(p)
+                                                            setBarcodeInput('')
+                                                            setDropdownResults([])
+                                                        }}
+                                                        className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between"
+                                                    >
+                                                        <div className="min-w-0 pr-4">
+                                                            <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                                                            <p className="text-[10px] text-gray-400 font-mono truncate">{p.barcode || p.sku || 'Sem Cód.'}</p>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <p className="text-xs font-bold text-gray-700">{p.stock_quantity}</p>
+                                                            <p className="text-[10px] text-gray-300 font-medium uppercase">{p.unit}</p>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => setCameraOpen(true)}
+                                        className="h-11 px-3 bg-white border border-gray-200 text-gray-400 hover:text-blue-600 rounded-xl transition-all flex items-center justify-center shrink-0"
+                                        title="Usar câmera"
+                                    >
+                                        <Camera className="w-5 h-5" />
                                     </button>
                                 </div>
+                            </div>
+                        </div>
 
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Estoque atual: <span className="font-bold text-gray-800">{selectedProduct.stock_quantity} {selectedProduct.unit}</span>
-                                </p>
+                        {/* LISTA DE ITENS DO ROMANEIO */}
+                        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex-1 min-h-[300px]">
+                            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-emerald-600" />
+                                    Itens do Romaneio
+                                </span>
+                                {cartItems.length > 0 && (
+                                    <span className="bg-blue-100 text-blue-700 font-bold text-xs px-2.5 py-0.5 rounded-full">
+                                        {cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'}
+                                    </span>
+                                )}
+                            </h2>
 
-                                {/* Tipo (Apenas Saída no Romaneio) */}
-                                <div className="flex gap-2 mb-3">
-                                    <div className="w-full h-9 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all bg-red-500 text-white shadow-sm cursor-default">
-                                        <ArrowUpFromLine className="w-3.5 h-3.5" /> Saída (Despacho / Romaneio)
-                                    </div>
+                            {cartItems.length === 0 ? (
+                                <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-xl h-full flex flex-col items-center justify-center">
+                                    <ScanBarcode className="w-10 h-10 text-gray-200 mb-3" />
+                                    <p className="text-sm font-semibold text-gray-400">Carrinho Vazio</p>
+                                    <p className="text-xs text-gray-300 mt-1 max-w-[200px]">Bipe os produtos para adicioná-Layout listalos ao romaneio de saída.</p>
                                 </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {cartItems.map((item, idx) => (
+                                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl transition-all group animate-in slide-in-from-left-2">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-gray-400 w-5">{idx + 1}.</span>
+                                                    <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3 ml-7 mt-0.5">
+                                                    <p className="text-[10px] text-gray-400 font-mono">{item.barcode || 'Sem código'}</p>
+                                                    <span className="text-[10px] text-gray-300">|</span>
+                                                    <p className="text-xs font-bold text-emerald-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                </div>
+                                            </div>
 
-                                {/* Quantidade + Obs */}
-                                <div className="grid grid-cols-4 gap-2 mb-3">
-                                    <div className="col-span-2 relative">
-                                        <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Quantidade</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                step={selectedProduct.unit === 'UN' ? '1' : '0.01'}
-                                                value={quantity}
-                                                onChange={(e) => setQuantity(e.target.value)}
-                                                className="w-full h-9 pl-3 pr-8 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-bold"
-                                            />
-                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">
-                                                {selectedProduct.unit}
-                                            </span>
+                                            <div className="flex flex-wrap items-center justify-end gap-3 ml-7 sm:ml-0">
+                                                <div className="text-right hidden sm:block w-24">
+                                                    <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Subtotal</p>
+                                                    <p className="text-sm font-black text-gray-800">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
+                                                </div>
+
+                                                {/* Controle de Quantidade */}
+                                                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step={isIntegerUnit(item.unit) ? "1" : "0.01"}
+                                                        value={item.quantity}
+                                                        onChange={(e) => updateCartQuantity(item.id, e.target.value, item.unit)}
+                                                        onBlur={() => handleQuantityBlur(item.id)}
+                                                        className="w-16 h-7 text-center text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent"
+                                                    />
+                                                    <span className="text-[10px] font-bold text-gray-400 pr-2 uppercase">{item.unit}</span>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => removeFromCart(item.id)}
+                                                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Observação</label>
-                                        <input
-                                            value={notes}
-                                            onChange={(e) => setNotes(e.target.value)}
-                                            className="w-full h-9 px-3 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                            placeholder="Opcional..."
-                                        />
-                                    </div>
+                                    ))}
                                 </div>
-
-                                <button
-                                    onClick={handleMovementSubmit}
-                                    disabled={submitting || !quantity || parseFloat(quantity) <= 0}
-                                    className="w-full h-10 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-md disabled:opacity-50 transition-all active:scale-95"
-                                >
-                                    {submitting ? 'Salvando...' : 'Confirmar'}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-2xl">
-                                <ScanBarcode className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                                <p className="text-xs text-gray-400">Bipe um produto para começar</p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
-                    {/* Recent movements */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                        <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <History className="w-4 h-4 text-violet-600" />
-                            Recém Adicionados
-                        </h2>
-                        {lastMovements.length === 0 ? (
-                            <div className="text-center py-10">
-                                <p className="text-xs text-gray-300 font-medium italic">Nenhuma movimentação recente</p>
+                    {/* RIGHTSIDE: RESUMO E FINALIZAÇÃO */}
+                    <div className="flex flex-col h-full">
+                        <div className="bg-slate-900 rounded-2xl p-6 shadow-xl sticky top-24">
+                            <h2 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                                Resumo do Romaneio
+                            </h2>
+
+                            <div className="space-y-4 mb-8">
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm text-slate-400">Cliente/Destino</span>
+                                    <span className="text-sm font-semibold text-white truncate max-w-[150px]" title={customerName}>{customerName || <span className="text-slate-500 italic">Não informado</span>}</span>
+                                </div>
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm text-slate-400">Total de Linhas</span>
+                                    <span className="text-sm font-bold text-white">{cartItems.length}</span>
+                                </div>
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm text-slate-400">Total de Peças (Qtd)</span>
+                                    <span className="text-lg font-bold text-slate-300">
+                                        {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm font-bold text-slate-300">Valor Total Estimado</span>
+                                    <span className="text-xl font-black text-emerald-400">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0))}
+                                    </span>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {lastMovements.map((m, i) => {
-                                    const t = m.type === 'IN' ? { label: 'Entrada', class: 'bg-emerald-50 text-emerald-600' } : { label: 'Saída', class: 'bg-red-50 text-red-600' }
-                                    return (
-                                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/50 border border-transparent hover:border-gray-100 transition-all animate-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 50}ms` }}>
-                                            <div className={`w-2 h-2 rounded-full ${m.type === 'IN' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-semibold text-gray-800 truncate">{m.product}</p>
-                                                <p className="text-[10px] text-gray-400">{t.label} · Qtd: {m.qty} {m.unit}</p>
-                                            </div>
-                                            <span className="text-[10px] text-gray-300 font-mono flex-shrink-0">{m.time}</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        )}
+
+                            <button
+                                onClick={handleFinalizeRomaneio}
+                                disabled={submitting || cartItems.length === 0}
+                                className="w-full h-12 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[15px] font-bold rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:shadow-none transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                {submitting ? 'Registrando BD...' : 'Finalizar Romaneio (Saída)'}
+                            </button>
+                            {cartItems.length > 0 && (
+                                <p className="text-[10px] text-center text-slate-400 mt-4 leading-relaxed">
+                                    Ao clicar em finalizar, o estoque de todos os {cartItems.length} itens será <strong className="text-slate-300">reduzido</strong> imediatamente.
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -436,26 +549,45 @@ export default function RomaneioPage() {
             )}
 
             {activeTab === 'estoque' && (
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col h-[600px]">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                        <div className="relative w-full max-w-sm">
+                            <input
+                                type="text"
+                                placeholder="Buscar no estoque por nome ou código..."
+                                value={estoqueSearch}
+                                onChange={(e) => {
+                                    setEstoqueSearch(e.target.value)
+                                    setEstoquePage(1)
+                                }}
+                                className="w-full h-10 pl-4 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 font-medium shadow-sm"
+                            />
+                        </div>
+                        <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
+                            {filteredAndSortedStock.length} {filteredAndSortedStock.length === 1 ? 'resultado' : 'resultados'}
+                        </span>
+                    </div>
+
+                    <div className="overflow-y-auto flex-1 relative">
                         <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-gray-50/80 border-b border-gray-100">
+                            <thead className="sticky top-0 bg-gray-50/95 backdrop-blur shadow-sm z-10">
+                                <tr>
                                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
                                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Código</th>
                                     <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
                                     <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Mínimo</th>
                                     <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
-                                    <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
-                                ) : stockLevels.length === 0 ? (
-                                    <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Nenhum dado de estoque</td></tr>
+                                    <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
+                                ) : currentEstoqueItems.length === 0 ? (
+                                    <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Nenhum dado de estoque encontrado</td></tr>
                                 ) : (
-                                    stockLevels.map((s) => (
-                                        <tr key={s.product_id} className="hover:bg-gray-50/50 transition-colors">
+                                    currentEstoqueItems.map((s) => (
+                                        <tr key={s.product_id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-4 py-3 font-medium text-gray-900">{s.product_name}</td>
                                             <td className="px-4 py-3 text-xs font-mono text-gray-400">{s.barcode || '—'}</td>
                                             <td className="px-4 py-3 text-right font-semibold text-gray-800">
@@ -468,48 +600,59 @@ export default function RomaneioPage() {
                                                     {s.is_low_stock ? 'BAIXO' : 'OK'}
                                                 </span>
                                             </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() => {
+                                                        addToCart({
+                                                            id: s.product_id,
+                                                            name: s.product_name,
+                                                            barcode: s.barcode,
+                                                            stock_quantity: s.stock_quantity,
+                                                            min_stock: s.min_stock,
+                                                            unit: s.unit,
+                                                            price: s.price,
+                                                            sku: null
+                                                        })
+                                                        // Opcional: Feedback visual ao clicar
+                                                    }}
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 mx-auto"
+                                                    title="Adicionar ao Romaneio"
+                                                >
+                                                    <Plus className="w-3 h-3" />
+                                                    Romaneio
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))
                                 )}
                             </tbody>
                         </table>
                     </div>
-                </div>
-            )}
 
-            {/* Modal de busca quando múltiplos resultados */}
-            {showSearch && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSearch(false)} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-sm font-bold text-gray-900">Selecione o Produto</h2>
-                            <button onClick={() => setShowSearch(false)} className="p-1 text-gray-400 hover:text-gray-600">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                        <div className="p-2 max-h-64 overflow-y-auto">
-                            {searchResults.map(p => (
+                    {/* Paginação */}
+                    {totalEstoquePages > 1 && (
+                        <div className="p-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-sm">
+                            <span className="text-gray-500 font-medium">
+                                Página <strong className="text-gray-900">{estoquePage}</strong> de {totalEstoquePages}
+                            </span>
+                            <div className="flex items-center gap-1">
                                 <button
-                                    key={p.id}
-                                    onClick={() => {
-                                        setSelectedProduct(p)
-                                        setShowSearch(false)
-                                    }}
-                                    className="w-full text-left p-3 hover:bg-gray-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-gray-100"
+                                    onClick={() => setEstoquePage(p => Math.max(1, p - 1))}
+                                    disabled={estoquePage === 1}
+                                    className="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-semibold disabled:opacity-50 disabled:bg-gray-50 hover:bg-gray-50 transition-colors"
                                 >
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                                        <p className="text-[10px] text-gray-400 font-mono">{p.barcode}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs font-bold text-gray-700">{p.stock_quantity}</p>
-                                        <p className="text-[10px] text-gray-300 font-medium uppercase">{p.unit}</p>
-                                    </div>
+                                    Anterior
                                 </button>
-                            ))}
+                                <button
+                                    onClick={() => setEstoquePage(p => Math.min(totalEstoquePages, p + 1))}
+                                    disabled={estoquePage === totalEstoquePages}
+                                    className="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-semibold disabled:opacity-50 disabled:bg-gray-50 hover:bg-gray-50 transition-colors"
+                                >
+                                    Próxima
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
 
@@ -518,6 +661,14 @@ export default function RomaneioPage() {
                 <BarcodeScanner
                     onScan={handleBarcodeScan}
                     onClose={() => setCameraOpen(false)}
+                />
+            )}
+
+            {showExportModal && (
+                <RomaneioExportModal
+                    customerName={customerName}
+                    items={cartItems}
+                    onClose={resetCart}
                 />
             )}
         </div>
