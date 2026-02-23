@@ -7,7 +7,9 @@ from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.categories import CategoryCreate, CategoryUpdate, CategoryResponse, ReorderRequest
 from backend.crud import categories as crud
+from backend.models.categories import Category
 from backend.config.logger import get_dynamic_logger
+from backend.core.plans_config import PLANS_CONFIG
 
 logger = get_dynamic_logger("categories")
 
@@ -45,6 +47,15 @@ def get_category(request: Request, category_id: int, db: Session = Depends(get_d
 @limiter.limit("30/minute")
 def create_category(request: Request, category: CategoryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
+        # Validação de Limite do Plano
+        plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["free"])
+        current_count = db.query(Category).count()
+        if current_count >= plan["limit_categories"]:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Limite de categorias atingido para o plano {current_user.plan_id.capitalize()}. (Limite: {plan['limit_categories']})"
+            )
+
         logger.info(f"Usuário {current_user.email} criando categoria: {category.name}")
         return crud.create_category(db, category)
     except HTTPException:

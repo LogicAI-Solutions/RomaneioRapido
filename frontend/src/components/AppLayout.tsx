@@ -8,7 +8,8 @@ import {
     ClipboardList,
     LogOut,
     Menu,
-    X
+    X,
+    Crown
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -17,6 +18,7 @@ const navItems = [
     { to: '/produtos', label: 'Produtos', icon: Boxes },
     { to: '/categorias', label: 'Categorias', icon: Tags },
     { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
+    { to: '/planos', label: 'Planos', icon: Crown },
 ]
 
 export default function AppLayout() {

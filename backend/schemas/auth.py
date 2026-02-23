@@ -25,6 +25,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
+    plan_id: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
 
@@ -32,6 +33,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     is_admin: bool
+    plan_id: str
     is_active: bool
     created_at: Optional[datetime] = None
 

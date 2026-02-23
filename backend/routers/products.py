@@ -11,6 +11,7 @@ from backend.models.users import User
 from backend.schemas.products import ProductCreate, ProductUpdate, ProductResponse
 from backend.crud import products as crud
 from backend.config.logger import get_dynamic_logger
+from backend.core.plans_config import PLANS_CONFIG
 
 logger = get_dynamic_logger("products")
 router = APIRouter(prefix="/products")
@@ -80,6 +81,15 @@ def get_product(request: Request, product_id: int, db: Session = Depends(get_db)
 @limiter.limit("30/minute")
 def create_product(request: Request, product: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
+        # Validação de Limite do Plano
+        plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["free"])
+        current_count = crud.count_products(db)
+        if current_count >= plan["limit_products"]:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Limite de produtos atingido para o plano {current_user.plan_id.capitalize()}. (Limite: {plan['limit_products']})"
+            )
+
         logger.info(f"Usuário {current_user.email} criando novo produto: sku={product.sku} barcode={product.barcode}")
         if product.barcode:
             existing = crud.get_product_by_barcode(db, product.barcode)

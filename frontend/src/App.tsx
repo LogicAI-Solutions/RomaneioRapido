@@ -7,6 +7,7 @@ import ProductsPage from './pages/ProductsPage'
 import CategoriesPage from './pages/CategoriesPage'
 import CategoryProductsPage from './pages/CategoryProductsPage'
 import RomaneioPage from './pages/RomaneioPage'
+import PlansPage from './pages/PlansPage'
 import AppLayout from './components/AppLayout'
 import './index.css'
 
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:id" element={<CategoryProductsPage />} />
         <Route path="/romaneio" element={<RomaneioPage />} />
+        <Route path="/planos" element={<PlansPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

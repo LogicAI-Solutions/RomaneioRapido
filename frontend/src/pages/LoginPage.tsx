@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { Package, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Package, Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2, Zap, BarChart3, ScanBarcode } from 'lucide-react'
 
 export default function LoginPage() {
     const { login } = useAuth()
@@ -28,103 +28,145 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
-            {/* Elementos decorativos de fundo */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-50/50 rounded-full blur-3xl" />
-            </div>
+        <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+            {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900 relative flex-col justify-between p-16">
+                {/* Botão Voltar */}
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium w-fit group"
+                >
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    Voltar para o início
+                </button>
 
-            <div className="relative w-full max-w-md">
-                {/* Card principal */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.06)] border border-white/60 p-10">
-                    {/* Logo e título */}
-                    <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/20 mb-5">
-                            <Package className="w-8 h-8 text-white" />
-                        </div>
-                        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
-                            RomaneioRapido
-                        </h1>
-                        <p className="text-sm text-gray-400 mt-1.5 font-medium">
-                            Gestão de Estoque Inteligente
-                        </p>
+                {/* Conteúdo Central */}
+                <div className="max-w-md">
+                    <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-8 border border-white/20">
+                        <Package className="w-8 h-8 text-white" />
                     </div>
+                    <h1 className="text-4xl font-extrabold text-white leading-tight mb-6 tracking-tight">
+                        Controle seu estoque com a velocidade que seu negócio exige.
+                    </h1>
+                    <p className="text-blue-100/70 text-lg mb-12">
+                        Gerencie movimentações, organize categorias e acompanhe relatórios em tempo real em uma única plataforma.
+                    </p>
 
-                    {/* Formulário */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Email */}
-                        <div className="space-y-1.5">
-                            <label htmlFor="email" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider pl-1">
-                                Email
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="seu@email.com"
-                                required
-                                className="w-full px-4 py-3.5 bg-gray-50/80 border border-gray-200/80 rounded-xl text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-sm"
-                            />
-                        </div>
-
-                        {/* Senha */}
-                        <div className="space-y-1.5">
-                            <label htmlFor="password" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider pl-1">
-                                Senha
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full px-4 py-3.5 bg-gray-50/80 border border-gray-200/80 rounded-xl text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-sm pr-12"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                                </button>
+                    <div className="space-y-6">
+                        {[
+                            { icon: ScanBarcode, text: 'Leitura rápida de código de barras' },
+                            { icon: Zap, text: 'Interface ultra-rápida sem delay' },
+                            { icon: BarChart3, text: 'Dashboards visuais e inteligentes' }
+                        ].map((item, i) => (
+                            <div key={i} className="flex items-center gap-4 text-white">
+                                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                                    <item.icon className="w-5 h-5 text-blue-300" />
+                                </div>
+                                <span className="text-sm font-medium">{item.text}</span>
                             </div>
-                        </div>
-
-                        {/* Erro */}
-                        {error && (
-                            <div className="flex items-center gap-2 px-4 py-3 bg-red-50/80 border border-red-100 rounded-xl">
-                                <div className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
-                                <p className="text-sm text-red-500 font-medium">{error}</p>
-                            </div>
-                        )}
-
-                        {/* Botão */}
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Entrando...
-                                </>
-                            ) : (
-                                'Entrar'
-                            )}
-                        </button>
-                    </form>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Rodapé */}
-                <p className="text-center text-xs text-gray-300 mt-8 font-medium">
-                    © 2026 RomaneioRapido
-                </p>
+                {/* Rodapé Visual */}
+                <div className="flex items-center gap-4 text-white/40 text-xs font-medium">
+                    <span>© 2026 RomaneioRapido</span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span>Segurança Garantida</span>
+                </div>
+            </div>
+
+            {/* Seção Direita - Formulário */}
+            <div className="flex-1 flex flex-col">
+                {/* Mobile Header (Apenas em Mobile) */}
+                <div className="lg:hidden p-6 flex items-center justify-between border-b border-gray-50">
+                    <div className="flex items-center gap-2" onClick={() => navigate('/')}>
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <Package className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-bold text-gray-900">RomaneioRapido</span>
+                    </div>
+                    <button onClick={() => navigate('/')} className="text-xs font-semibold text-blue-600">
+                        Sair
+                    </button>
+                </div>
+
+                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-20">
+                    <div className="w-full max-w-sm">
+                        {/* Boas vindas */}
+                        <div className="mb-10 text-center lg:text-left">
+                            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Acesse sua conta</h2>
+                            <p className="text-gray-500 text-sm">Insira suas credenciais para gerenciar seu estoque.</p>
+                        </div>
+
+                        {/* Formulário */}
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-1.5">
+                                <label className="text-[13px] font-bold text-gray-700 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="exemplo@email.com"
+                                    required
+                                    className="w-full h-[54px] px-5 bg-white border border-gray-200 rounded-[10px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="text-[13px] font-bold text-gray-700">Senha</label>
+                                    <button type="button" className="text-[11px] font-bold text-blue-600 hover:underline">Esqueceu a senha?</button>
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••••••"
+                                        required
+                                        className="w-full h-[54px] px-5 bg-white border border-gray-200 rounded-[10px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-sm pr-12"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="p-4 bg-red-50 border border-red-100 rounded-[10px] flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="w-1.5 h-10 bg-red-500 rounded-full" />
+                                    <p className="text-sm text-red-600 font-bold">{error}</p>
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full h-[54px] bg-blue-600 text-white font-bold rounded-[10px] shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-blue-600/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Autenticando...
+                                    </>
+                                ) : (
+                                    'Entrar no Sistema'
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="mt-12 text-center">
+                            <p className="text-xs text-gray-400 font-medium">
+                                Não tem uma conta? <button className="text-blue-600 font-bold hover:underline">Solicitar acesso</button>
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     )

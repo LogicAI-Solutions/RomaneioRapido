@@ -15,8 +15,10 @@ import {
     Zap,
     Globe,
     ChevronRight,
-    Star
+    Star,
+    Check
 } from 'lucide-react'
+import { PLANS } from '../constants/plans'
 
 export default function LandingPage() {
     const navigate = useNavigate()
@@ -291,6 +293,71 @@ export default function LandingPage() {
                                 <div key={i}>
                                     <p className="text-3xl md:text-4xl font-extrabold text-blue-600">{n.value}</p>
                                     <p className="text-sm text-gray-400 font-medium mt-1">{n.label}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Planos */}
+                <section id="planos" className="py-24 bg-white">
+                    <div className="max-w-6xl mx-auto px-5">
+                        <div className="text-center mb-16">
+                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-3">Preços</p>
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
+                                Escolha o plano ideal para você
+                            </h2>
+                            <p className="text-gray-500 max-w-2xl mx-auto">
+                                Sem taxas escondidas. Cancele quando quiser ou comece com nosso teste limitado.
+                            </p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {PLANS.map((plan, i) => (
+                                <div
+                                    key={i}
+                                    className={`relative p-8 rounded-[24px] border transition-all duration-300 ${plan.highlight
+                                        ? 'border-blue-600 shadow-xl shadow-blue-600/10 scale-105 z-10 bg-white'
+                                        : 'border-gray-100 hover:border-gray-200 bg-gray-50/30'
+                                        }`}
+                                >
+                                    {plan.highlight && (
+                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                            Mais Popular
+                                        </div>
+                                    )}
+
+                                    <div className="mb-8">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                                        <p className="text-sm text-gray-500 leading-relaxed min-h-[40px]">{plan.description}</p>
+                                    </div>
+
+                                    <div className="flex items-baseline gap-1 mb-8">
+                                        <span className="text-4xl font-extrabold text-gray-900">{plan.price}</span>
+                                        {plan.period && <span className="text-gray-400 font-medium">{plan.period}</span>}
+                                    </div>
+
+                                    <button
+                                        onClick={() => navigate('/login')}
+                                        className={`w-full py-4 rounded-[10px] font-bold text-sm transition-all duration-200 mb-8 ${plan.highlight
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
+                                            : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        Começar Agora
+                                    </button>
+
+                                    <div className="space-y-4">
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">O que está incluso:</p>
+                                        {plan.features.map((feature, j) => (
+                                            <div key={j} className="flex items-center gap-3">
+                                                <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                                    <Check className="w-3 h-3 text-blue-600" />
+                                                </div>
+                                                <span className="text-sm text-gray-600">{feature}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>

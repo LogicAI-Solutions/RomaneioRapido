@@ -25,6 +25,7 @@ def init_db(db: Session = next(database.get_db())):
             email=admin_email,
             hashed_password=hashed_password,
             is_admin=True,
+            plan_id="enterprise",
             is_active=True,
             full_name="Administrador"
         )
