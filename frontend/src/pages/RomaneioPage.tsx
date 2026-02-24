@@ -8,7 +8,8 @@ import {
     Camera,
     ShoppingCart,
     Trash2,
-    CheckCircle2
+    CheckCircle2,
+    UserCircle2
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -24,6 +25,13 @@ interface Product {
     min_stock: number
     unit: string
     price: number
+}
+
+interface ClientResult {
+    id: number
+    name: string
+    document: string | null
+    phone: string | null
 }
 
 interface StockLevel {
@@ -49,8 +57,16 @@ export default function RomaneioPage() {
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [cameraOpen, setCameraOpen] = useState(false)
+
+    // Busca de Produtos
     const [dropdownResults, setDropdownResults] = useState<Product[]>([])
     const [isSearchingText, setIsSearchingText] = useState(false)
+
+    // Busca de Clientes
+    const [dropdownClients, setDropdownClients] = useState<ClientResult[]>([])
+    const [isSearchingClient, setIsSearchingClient] = useState(false)
+    const [showClientDropdown, setShowClientDropdown] = useState(false)
+
     const [movements, setMovements] = useState<any[]>([])
     const [stockLevels, setStockLevels] = useState<StockLevel[]>([])
 
@@ -111,6 +127,26 @@ export default function RomaneioPage() {
         }, 400)
         return () => clearTimeout(timer)
     }, [barcodeInput])
+
+    // Busca Esperta para Clientes
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (customerName.trim().length >= 2 && showClientDropdown) {
+                setIsSearchingClient(true)
+                try {
+                    const res = await api.get('/clients/', { params: { search: customerName.trim(), limit: 5 } })
+                    setDropdownClients(res.data)
+                } catch {
+                    setDropdownClients([])
+                } finally {
+                    setIsSearchingClient(false)
+                }
+            } else {
+                setDropdownClients([])
+            }
+        }, 400)
+        return () => clearTimeout(timer)
+    }, [customerName, showClientDropdown])
 
     // Suporte para Scanner USB (Bip) Global
     useEffect(() => {
@@ -327,15 +363,61 @@ export default function RomaneioPage() {
                                 Montar Romaneio
                             </h2>
 
-                            <div className="mb-4">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Cliente / Destino (Opcional)</label>
-                                <input
-                                    type="text"
-                                    placeholder="Nome do cliente ou número do pedido"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    className="w-full h-11 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 text-gray-900 font-semibold"
-                                />
+                            <div className="mb-4 relative">
+                                <div className="flex justify-between items-end mb-1.5 ml-1">
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cliente / Destino</label>
+                                    <button
+                                        onClick={() => {
+                                            setCustomerName('ROMANEIO/CONSUMIDOR')
+                                            setShowClientDropdown(false)
+                                        }}
+                                        className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md hover:bg-blue-100 transition-colors uppercase tracking-wider"
+                                    >
+                                        + Consumidor Rápido
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                    <input
+                                        type="text"
+                                        placeholder="Busque cliente ou insira um nome livre..."
+                                        value={customerName}
+                                        onChange={(e) => {
+                                            setCustomerName(e.target.value)
+                                            setShowClientDropdown(true)
+                                        }}
+                                        onFocus={() => {
+                                            if (customerName.trim().length >= 2) setShowClientDropdown(true)
+                                        }}
+                                        onBlur={() => {
+                                            // Delay para permitir o clique no dropdown
+                                            setTimeout(() => setShowClientDropdown(false), 200)
+                                        }}
+                                        className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 text-gray-900 font-semibold"
+                                    />
+
+                                    {/* Dropdown de Clientes */}
+                                    {showClientDropdown && (dropdownClients.length > 0 || isSearchingClient) && customerName.trim().length >= 2 && (
+                                        <div className="absolute z-40 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1">
+                                            {isSearchingClient ? (
+                                                <div className="p-4 text-center text-sm text-gray-400 font-medium animate-pulse">Buscando clientes...</div>
+                                            ) : dropdownClients.map(c => (
+                                                <button
+                                                    key={c.id}
+                                                    onClick={() => {
+                                                        const docInfo = c.document ? ` - CPF/CNPJ: ${c.document}` : ''
+                                                        setCustomerName(`${c.name}${docInfo}`)
+                                                        setShowClientDropdown(false)
+                                                    }}
+                                                    className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex flex-col"
+                                                >
+                                                    <span className="text-sm font-bold text-gray-900">{c.name}</span>
+                                                    {c.document && <span className="text-[10px] text-gray-400 font-mono mt-0.5">{c.document}</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Barcode Input */}

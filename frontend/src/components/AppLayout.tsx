@@ -10,6 +10,7 @@ import {
     Menu,
     X,
     User as UserIcon,
+    Users,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react'
@@ -19,6 +20,7 @@ const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/produtos', label: 'Produtos', icon: Boxes },
     { to: '/categorias', label: 'Categorias', icon: Tags },
+    { to: '/clientes', label: 'Clientes', icon: Users },
     { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
 ]
 
