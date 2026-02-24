@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical } from 'lucide-react'
 
 interface Category {
     id: number
@@ -21,6 +21,7 @@ export default function CategoriesPage() {
     const [editing, setEditing] = useState<Category | null>(null)
     const [saving, setSaving] = useState(false)
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null)
     const [form, setForm] = useState({ name: '', description: '' })
 
     // Reorder state
@@ -248,33 +249,59 @@ export default function CategoriesPage() {
                     ))}
                 </div>
             ) : (
-                /* Normal Mode: Grid de cards */
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {displayList.map(c => (
-                        <div key={c.id} onClick={() => navigate(`/categorias/${c.id}`)} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow group cursor-pointer">
-                            <div className="flex items-start justify-between mb-2">
-                                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                    <Tags className="w-4 h-4" />
-                                </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                    <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                        <Pencil className="w-3.5 h-3.5" />
+                        <div key={c.id} onClick={() => navigate(`/categorias/${c.id}`)} className="bg-white rounded-xl border border-gray-100 p-6 hover:shadow-md transition-shadow group cursor-pointer flex flex-col items-center text-center relative overflow-hidden">
+                            <div className="absolute right-2 top-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setOpenMenuId(openMenuId === c.id ? null : c.id)}
+                                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
+                                    >
+                                        <MoreVertical className="w-4 h-4" />
                                     </button>
-                                    {deleteConfirm === c.id ? (
-                                        <div className="flex items-center gap-1">
-                                            <button onClick={() => handleDelete(c.id)} className="px-2 py-1 text-[10px] font-bold bg-red-500 text-white rounded-md">Sim</button>
-                                            <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] font-bold bg-gray-200 text-gray-600 rounded-md">Não</button>
+
+                                    {openMenuId === c.id && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                                            <div className="absolute right-0 top-10 w-32 bg-white rounded-xl shadow-xl border border-slate-100 z-20 py-1 animate-in fade-in zoom-in-95 duration-200">
+                                                <button
+                                                    onClick={() => { openEdit(c); setOpenMenuId(null); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" /> Editar
+                                                </button>
+                                                <button
+                                                    onClick={() => { setDeleteConfirm(c.id); setOpenMenuId(null); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" /> Excluir
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {deleteConfirm === c.id && (
+                                        <div className="absolute right-0 top-0 bg-white border border-red-100 rounded-xl shadow-lg p-2 z-30 animate-in fade-in slide-in-from-right-4">
+                                            <p className="text-[10px] font-bold text-red-600 mb-2 truncate">Excluir?</p>
+                                            <div className="flex gap-1.5">
+                                                <button onClick={() => handleDelete(c.id)} className="px-2 py-1 text-[10px] bg-red-500 text-white rounded-md font-bold hover:bg-red-600 transition-colors">Sim</button>
+                                                <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] bg-slate-100 text-slate-600 rounded-md font-bold hover:bg-slate-200 transition-colors">Não</button>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <button onClick={() => setDeleteConfirm(c.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
                                     )}
                                 </div>
                             </div>
-                            <h3 className="text-sm font-bold text-gray-900">{c.name}</h3>
-                            {c.description && <p className="text-xs text-gray-400 mt-1">{c.description}</p>}
-                            <p className="text-[10px] text-blue-500 font-medium mt-2">Clique para ver produtos →</p>
+
+                            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-4 transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300 shadow-sm shadow-brand-500/10">
+                                <Tags className="w-6 h-6" />
+                            </div>
+
+                            <h3 className="text-sm font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{c.name}</h3>
+                            {c.description && <p className="text-xs text-gray-400 mt-2 line-clamp-2 max-w-[200px]">{c.description}</p>}
+                            <div className="mt-4 pt-4 border-t border-gray-50 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-brand-600">
+                                Visualizar Produtos
+                            </div>
                         </div>
                     ))}
                 </div>

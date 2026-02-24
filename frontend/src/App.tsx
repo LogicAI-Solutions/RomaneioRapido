@@ -8,7 +8,6 @@ import SignupPage from './pages/SignupPage'
 import CategoriesPage from './pages/CategoriesPage'
 import CategoryProductsPage from './pages/CategoryProductsPage'
 import RomaneioPage from './pages/RomaneioPage'
-import PlansPage from './pages/PlansPage'
 import ProfilePage from './pages/ProfilePage'
 import AppLayout from './components/AppLayout'
 import { Toaster } from 'react-hot-toast'
@@ -68,7 +67,6 @@ function AppRoutes() {
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:id" element={<CategoryProductsPage />} />
         <Route path="/romaneio" element={<RomaneioPage />} />
-        <Route path="/planos" element={<PlansPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
       </Route>
 

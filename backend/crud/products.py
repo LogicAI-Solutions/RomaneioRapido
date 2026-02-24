@@ -3,7 +3,7 @@ from backend.models.products import Product
 from backend.schemas.products import ProductCreate, ProductUpdate
 
 
-def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = None, category_id: int = None):
+def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = None, category_id: int = None, sort_by: str = "name", order: str = "asc"):
     query = db.query(Product).filter(Product.is_active == True)
     if search:
         query = query.filter(
@@ -13,7 +13,18 @@ def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = Non
         )
     if category_id:
         query = query.filter(Product.category_id == category_id)
-    return query.order_by(Product.name.asc()).offset(skip).limit(limit).all()
+    
+    # Dynamic Sorting
+    try:
+        column = getattr(Product, sort_by)
+        if order.lower() == "desc":
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+    except AttributeError:
+        query = query.order_by(Product.name.asc())
+
+    return query.offset(skip).limit(limit).all()
 
 
 def count_products(db: Session, search: str = None, category_id: int = None):

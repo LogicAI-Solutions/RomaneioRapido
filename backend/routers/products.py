@@ -25,13 +25,15 @@ def list_products(
     per_page: int = Query(20, ge=1, le=100, description="Itens por página"),
     search: Optional[str] = Query(None, description="Busca por nome, barcode ou SKU"),
     category_id: Optional[int] = Query(None, description="Filtrar por categoria"),
+    sort_by: str = Query("name", description="Coluna para ordenação"),
+    order: str = Query("asc", description="Ordem: asc ou desc"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
         skip = (page - 1) * per_page
         total = crud.count_products(db, search=search, category_id=category_id)
-        items = crud.get_products(db, skip=skip, limit=per_page, search=search, category_id=category_id)
+        items = crud.get_products(db, skip=skip, limit=per_page, search=search, category_id=category_id, sort_by=sort_by, order=order)
         pages = math.ceil(total / per_page) if total > 0 else 1
         return {
             "items": items,
