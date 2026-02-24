@@ -1,3 +1,4 @@
+import math
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
@@ -28,18 +29,29 @@ def create_client(
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
-@router.get("/", response_model=List[ClientResponse])
+@router.get("/")
 @limiter.limit("120/minute")
 def list_clients(
     request: Request,
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
-        return crud.get_clients(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
+        skip = (page - 1) * per_page
+        total = crud.count_clients(db, user_id=current_user.id, search=search)
+        items = crud.get_clients(db, user_id=current_user.id, skip=skip, limit=per_page, search=search)
+        pages = math.ceil(total / per_page) if total > 0 else 1
+        
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": pages,
+        }
     except Exception as e:
         logger.error(f"Erro ao listar clientes: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

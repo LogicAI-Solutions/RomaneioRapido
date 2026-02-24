@@ -9,6 +9,11 @@ class InventoryMovementBase(BaseModel):
     quantity: float
     movement_type: MovementType
     notes: Optional[str] = None
+    product_name_snapshot: Optional[str] = None
+    product_barcode_snapshot: Optional[str] = None
+    unit_price_snapshot: Optional[float] = None
+    unit_snapshot: Optional[str] = None
+    romaneio_id: Optional[str] = None
 
 
 class InventoryMovementCreate(InventoryMovementBase):

@@ -5,6 +5,7 @@ import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
 import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ } from 'lucide-react'
+import ConfirmModal from '../components/ConfirmModal'
 
 interface Category {
     id: number
@@ -276,7 +277,7 @@ export default function CategoriesPage() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {displayList.map(c => (
-                        <div key={c.id} onClick={() => navigate(`/categorias/${c.id}`)} className="bg-white rounded-xl border border-gray-100 p-6 hover:shadow-md transition-shadow group cursor-pointer flex flex-col items-center text-center relative overflow-hidden">
+                        <div key={c.id} onClick={() => navigate(`/categorias/${c.id}`)} className="bg-white rounded-xl border border-gray-100 p-6 hover:shadow-md transition-shadow group cursor-pointer flex flex-col items-center text-center relative">
                             <div className="absolute right-2 top-2" onClick={(e) => e.stopPropagation()}>
                                 <div className="relative">
                                     <button
@@ -288,32 +289,22 @@ export default function CategoriesPage() {
 
                                     {openMenuId === c.id && (
                                         <>
-                                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
-                                            <div className="absolute right-0 top-10 w-32 bg-white rounded-xl shadow-xl border border-slate-100 z-20 py-1 animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                            <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                                                 <button
                                                     onClick={() => { openEdit(c); setOpenMenuId(null); }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors"
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
                                                 >
-                                                    <Pencil className="w-3.5 h-3.5" /> Editar
+                                                    <Pencil className="w-4 h-4" /> Editar
                                                 </button>
                                                 <button
                                                     onClick={() => { setDeleteConfirm(c.id); setOpenMenuId(null); }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" /> Excluir
+                                                    <Trash2 className="w-4 h-4" /> Excluir
                                                 </button>
                                             </div>
                                         </>
-                                    )}
-
-                                    {deleteConfirm === c.id && (
-                                        <div className="absolute right-0 top-0 bg-white border border-red-100 rounded-xl shadow-lg p-2 z-30 animate-in fade-in slide-in-from-right-4">
-                                            <p className="text-[10px] font-bold text-red-600 mb-2 truncate">Excluir?</p>
-                                            <div className="flex gap-1.5">
-                                                <button onClick={() => handleDelete(c.id)} className="px-2 py-1 text-[10px] bg-red-500 text-white rounded-md font-bold hover:bg-red-600 transition-colors">Sim</button>
-                                                <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] bg-slate-100 text-slate-600 rounded-md font-bold hover:bg-slate-200 transition-colors">Não</button>
-                                            </div>
-                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -365,6 +356,16 @@ export default function CategoriesPage() {
                     </div>
                 </div>
             )}
+            {/* CONFIRM DELETE */}
+            <ConfirmModal
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+                title="Excluir Categoria"
+                message="Tem certeza que deseja excluir esta categoria? Os produtos vinculados a ela permanecerão, mas sem categoria definida."
+                confirmText="Excluir"
+                loading={loading}
+            />
         </div>
     )
 }

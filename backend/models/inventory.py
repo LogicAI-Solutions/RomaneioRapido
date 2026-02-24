@@ -22,8 +22,17 @@ class InventoryMovement(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    product_name_snapshot = Column(String, nullable=True)
+    product_barcode_snapshot = Column(String, nullable=True)
+    unit_price_snapshot = Column(Float, nullable=True)
+    unit_snapshot = Column(String, nullable=True)
+    romaneio_id = Column(String, nullable=True, index=True)
+
     product = relationship("Product", back_populates="movements")
 
     @property
     def product_name(self):
+        # Prefer snapshot if available, fallback to relationship
+        if self.product_name_snapshot:
+            return self.product_name_snapshot
         return self.product.name if self.product else "Produto Excluído"

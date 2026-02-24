@@ -9,7 +9,9 @@ import {
     ShoppingCart,
     Trash2,
     CheckCircle2,
-    UserCircle2
+    UserCircle2,
+    Smartphone,
+    MoreVertical
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -69,6 +71,52 @@ export default function RomaneioPage() {
 
     const [movements, setMovements] = useState<any[]>([])
     const [stockLevels, setStockLevels] = useState<StockLevel[]>([])
+
+    // Estado para Regerar Romaneio Histórico
+    const [historicExport, setHistoricExport] = useState<{ customerName: string, items: CartItem[] } | null>(null)
+    const [openHistoryMenuId, setOpenHistoryMenuId] = useState<string | number | null>(null)
+
+    // Agrupamento de Movimentações para permitir Re-gerar Romaneios
+    const groupedMovements = useMemo(() => {
+        const groups: Record<string, any> = {}
+        const singles: any[] = []
+
+        movements.forEach(m => {
+            if (m.romaneio_id) {
+                if (!groups[m.romaneio_id]) {
+                    // Tenta extrair o nome do cliente da nota "Romaneio: Nome do Cliente "
+                    let cName = ""
+                    if (m.notes && m.notes.startsWith("Romaneio: ")) {
+                        cName = m.notes.replace("Romaneio: ", "").trim()
+                    }
+
+                    groups[m.romaneio_id] = {
+                        id: m.romaneio_id,
+                        created_at: m.created_at,
+                        customerName: cName,
+                        items: [],
+                        type: m.movement_type
+                    }
+                }
+                groups[m.romaneio_id].items.push(m)
+            } else {
+                singles.push(m)
+            }
+        })
+
+        const result = [
+            ...Object.values(groups).map(g => ({ ...g, isGroup: true })),
+            ...singles.map(s => ({
+                ...s,
+                isGroup: false,
+                id: s.id,
+                items: [s], // Treat as a single-item group for actions
+                customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || "")
+            }))
+        ]
+
+        return result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }, [movements])
 
     // Filtros e Paginação do Estoque
     const [estoqueSearch, setEstoqueSearch] = useState('')
@@ -267,15 +315,22 @@ export default function RomaneioPage() {
         setSubmitting(true)
 
         try {
+            // Gerar um ID de agrupamento para este Romaneio (Batch UUID)
+            const romaneioBatchId = `ROM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+
             // Envia cada item do carrinho como uma movimentação de SAÍDA individual
-            // Ideal seria ter um endpoint em lote (bulk), mas aqui fazemos sequencialmente de forma simples.
-            // Para sistemas em produção pesada, recomenda-se criar o endpoint bulk no backend.
+            // Incluindo SNAPSHOTS dos dados para preservar o histórico caso o produto seja alterado/excluído
             for (const item of cartItems) {
                 await api.post('/inventory/movements', {
                     product_id: item.id,
                     quantity: item.quantity,
                     movement_type: 'OUT',
                     notes: customerName ? `Romaneio: ${customerName} ` : 'Romaneio Rápido',
+                    romaneio_id: romaneioBatchId,
+                    product_name_snapshot: item.name,
+                    product_barcode_snapshot: item.barcode,
+                    unit_price_snapshot: item.price,
+                    unit_snapshot: item.unit
                 })
             }
 
@@ -594,35 +649,136 @@ export default function RomaneioPage() {
             )}
 
             {activeTab === 'movimentacoes' && (
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm transition-all duration-300">
+                    <div className="overflow-x-auto min-h-[400px]">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50/80 border-b border-gray-100">
                                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
-                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
+                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Descrição / Produto</th>
                                     <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</th>
-                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Qtd</th>
-                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Observação</th>
+                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Qtd / Itens</th>
+                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
                                     <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
-                                ) : movements.length === 0 ? (
+                                ) : groupedMovements.length === 0 ? (
                                     <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Nenhuma movimentação registrada</td></tr>
                                 ) : (
-                                    movements.map((m) => (
-                                        <tr key={m.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-4 py-3 text-gray-500 text-xs">{new Date(m.created_at).toLocaleString('pt-BR')}</td>
-                                            <td className="px-4 py-3 font-medium text-gray-900">{m.product?.name || 'Produto Excluído'}</td>
+                                    groupedMovements.map((g) => (
+                                        <tr key={g.id} className={`hover:bg-gray-50/50 transition-colors ${g.isGroup ? 'bg-blue-50/20' : ''}`}>
+                                            <td className="px-4 py-3 text-gray-500 text-xs">
+                                                {new Date(g.created_at).toLocaleString('pt-BR')}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {g.isGroup ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-gray-900">Romaneio: {g.customerName || 'Consumidor'}</span>
+                                                        <span className="text-[10px] text-gray-400 uppercase tracking-tight">ID: {g.id}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-800">
+                                                            {g.product_name_snapshot || g.product?.name || 'Produto Excluído'}
+                                                        </span>
+                                                        {g.notes && <span className="text-[10px] text-gray-400 italic">{g.notes}</span>}
+                                                    </div>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${m.movement_type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                                                    {m.movement_type === 'IN' ? 'ENTRADA' : 'SAÍDA'}
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${g.type === 'OUT' || g.movement_type === 'OUT' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                    {g.isGroup ? 'ROMANEIO' : (g.movement_type === 'IN' ? 'ENTRADA' : 'SAÍDA')}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-right font-semibold text-gray-700">{m.quantity}</td>
-                                            <td className="px-4 py-3 text-gray-400 text-xs italic">{m.notes || '—'}</td>
+                                            <td className="px-4 py-3 text-right">
+                                                {g.isGroup ? (
+                                                    <span className="font-bold text-blue-600">{g.items.length} itens</span>
+                                                ) : (
+                                                    <span className="font-semibold text-gray-700">{g.quantity}</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                {(g.isGroup || g.movement_type === 'OUT') && (
+                                                    <div className="relative flex justify-end">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setOpenHistoryMenuId(openHistoryMenuId === (g.id || g.romaneio_id) ? null : (g.id || g.romaneio_id))
+                                                            }}
+                                                            className={`p-2.5 rounded-xl transition-all ${openHistoryMenuId === (g.id || g.romaneio_id) ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                        >
+                                                            <MoreVertical className="w-5 h-5" />
+                                                        </button>
+
+                                                        {openHistoryMenuId === (g.id || g.romaneio_id) && (
+                                                            <>
+                                                                <div className="fixed inset-0 z-40" onClick={() => setOpenHistoryMenuId(null)} />
+                                                                <div className="absolute right-0 top-12 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const itemsForExport = g.items.map((m: any) => ({
+                                                                                id: m.product_id,
+                                                                                name: m.product_name_snapshot || m.product?.name || 'Produto Excluído',
+                                                                                barcode: m.product_barcode_snapshot || m.product?.barcode || null,
+                                                                                quantity: m.quantity,
+                                                                                unit: m.unit_snapshot || m.product?.unit || 'un',
+                                                                                price: m.unit_price_snapshot || m.product?.price || 0
+                                                                            }))
+                                                                            setHistoricExport({
+                                                                                customerName: g.customerName || 'Consumidor',
+                                                                                items: itemsForExport
+                                                                            })
+                                                                            setOpenHistoryMenuId(null)
+                                                                        }}
+                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors text-left"
+                                                                    >
+                                                                        <Smartphone className="w-4 h-4" /> Imprimir / Zap
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            setOpenHistoryMenuId(null)
+                                                                            try {
+                                                                                setLoading(true)
+                                                                                const newCart: CartItem[] = []
+                                                                                for (const historicItem of g.items) {
+                                                                                    try {
+                                                                                        const res = await api.get(`/products/${historicItem.product_id}`)
+                                                                                        if (res.data) {
+                                                                                            newCart.push({
+                                                                                                id: res.data.id,
+                                                                                                name: res.data.name,
+                                                                                                barcode: res.data.barcode,
+                                                                                                quantity: historicItem.quantity,
+                                                                                                unit: res.data.unit,
+                                                                                                price: res.data.price
+                                                                                            })
+                                                                                        }
+                                                                                    } catch {
+                                                                                        toast.error(`Produto "${historicItem.product_name_snapshot || 'Desconhecido'}" não encontrado.`)
+                                                                                    }
+                                                                                }
+                                                                                setCartItems(newCart)
+                                                                                setCustomerName(g.customerName || '')
+                                                                                setActiveTab('romaneio')
+                                                                                toast.success('Pedido copiado! Revise o romaneio.')
+                                                                            } catch (err) {
+                                                                                toast.error('Erro ao copiar pedido.')
+                                                                            } finally {
+                                                                                setLoading(false)
+                                                                            }
+                                                                        }}
+                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors text-left"
+                                                                    >
+                                                                        <Plus className="w-4 h-4" /> Copiar Pedido
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))
                                 )}
@@ -633,7 +789,7 @@ export default function RomaneioPage() {
             )}
 
             {activeTab === 'estoque' && (
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col h-[600px]">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-[600px] transition-all duration-300">
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
                         <div className="relative w-full max-w-sm">
                             <input
@@ -738,6 +894,24 @@ export default function RomaneioPage() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* Modal de Exportação para Romaneio Recém Criado */}
+            {showExportModal && (
+                <RomaneioExportModal
+                    customerName={customerName}
+                    items={cartItems}
+                    onClose={resetCart}
+                />
+            )}
+
+            {/* Modal de Exportação para Romaneio do Histórico (Regerar) */}
+            {historicExport && (
+                <RomaneioExportModal
+                    customerName={historicExport.customerName}
+                    items={historicExport.items}
+                    onClose={() => setHistoricExport(null)}
+                />
             )}
 
             {/* Camera Scanner */}

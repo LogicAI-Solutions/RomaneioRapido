@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { Plus, Pencil, Trash2, X, Search, Users, Phone, Mail } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Search, Users, Phone, Mail, MoreVertical } from 'lucide-react'
+import { maskDocument, maskPhone } from '../utils/masks'
+import ConfirmModal from '../components/ConfirmModal'
 
 interface Client {
     id: number
@@ -22,6 +24,13 @@ export default function ClientsPage() {
     const [saving, setSaving] = useState(false)
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+
+    // Pagination state
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalClients, setTotalClients] = useState(0)
+    const perPage = 10
 
     const [form, setForm] = useState({
         name: '',
@@ -31,10 +40,19 @@ export default function ClientsPage() {
         notes: ''
     })
 
-    const fetchClients = async () => {
+    const fetchClients = async (p: number = page) => {
         try {
-            const res = await api.get('/clients/', { params: { search: searchQuery } })
-            setClients(res.data)
+            const res = await api.get('/clients/', {
+                params: {
+                    search: searchQuery,
+                    page: p,
+                    per_page: perPage
+                }
+            })
+            setClients(res.data.items)
+            setTotalPages(res.data.pages)
+            setTotalClients(res.data.total)
+            setPage(res.data.page)
         } catch (err) {
             console.error('Erro ao buscar clientes:', err)
         } finally {
@@ -141,8 +159,8 @@ export default function ClientsPage() {
             </div>
 
             {/* LIST */}
-            <div className="glass-card rounded-[2rem] overflow-hidden">
-                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            <div className="glass-card rounded-[2rem]">
+                <div className="overflow-x-auto min-h-[400px] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-slate-50/50">
@@ -188,29 +206,35 @@ export default function ClientsPage() {
                                             <p className="text-xs text-slate-500 italic truncate max-w-[200px]">{c.notes || '—'}</p>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <div className="flex items-center justify-end gap-2 relative">
+                                            <div className="relative flex justify-end">
                                                 <button
-                                                    onClick={() => openEdit(c)}
-                                                    className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all border border-transparent hover:border-brand-100"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setOpenMenuId(openMenuId === c.id ? null : c.id)
+                                                    }}
+                                                    className={`p-2.5 rounded-xl transition-all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
                                                 >
-                                                    <Pencil className="w-4 h-4" />
+                                                    <MoreVertical className="w-5 h-5" />
                                                 </button>
 
-                                                {deleteConfirm === c.id ? (
-                                                    <div className="absolute right-0 flex items-center bg-white shadow-xl border border-red-100 rounded-xl p-1 z-10 animate-in zoom-in-95 origin-right">
-                                                        <span className="text-[10px] font-black px-3 text-red-500 uppercase tracking-wider">Confirmar?</span>
-                                                        <button onClick={() => handleDelete(c.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-bold text-xs px-3">Sim</button>
-                                                        <button onClick={() => setDeleteConfirm(null)} className="p-2 ml-1 text-slate-400 hover:bg-slate-100 rounded-lg">
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => setDeleteConfirm(c.id)}
-                                                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                {openMenuId === c.id && (
+                                                    <>
+                                                        <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                                        <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                                            <button
+                                                                onClick={() => { openEdit(c); setOpenMenuId(null); }}
+                                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors"
+                                                            >
+                                                                <Pencil className="w-4 h-4" /> Editar
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setDeleteConfirm(c.id); setOpenMenuId(null); }}
+                                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" /> Excluir
+                                                            </button>
+                                                        </div>
+                                                    </>
                                                 )}
                                             </div>
                                         </td>
@@ -220,6 +244,50 @@ export default function ClientsPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Paginação */}
+                {totalPages > 1 && (
+                    <div className="px-8 py-6 border-t border-slate-100/50 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30">
+                        <p className="text-xs font-bold text-slate-400 order-2 sm:order-1">
+                            Mostrando <span className="text-slate-600">{(page - 1) * perPage + 1}–{Math.min(page * perPage, totalClients)}</span> de <span className="text-slate-600">{totalClients}</span> clientes
+                        </p>
+                        <div className="flex items-center gap-2 order-1 sm:order-2">
+                            <button
+                                onClick={() => fetchClients(page - 1)}
+                                disabled={page <= 1}
+                                className="h-10 px-4 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                            >
+                                Anterior
+                            </button>
+                            <div className="flex items-center gap-1.5">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                                    .map((p, i, arr) => (
+                                        <React.Fragment key={p}>
+                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="text-slate-300 px-1 font-bold">...</span>}
+                                            <button
+                                                onClick={() => fetchClients(p)}
+                                                className={`w-10 h-10 text-xs font-bold rounded-xl transition-all shadow-sm ${p === page
+                                                    ? 'bg-brand-600 text-white'
+                                                    : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300 hover:text-brand-600'
+                                                    }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        </React.Fragment>
+                                    ))
+                                }
+                            </div>
+                            <button
+                                onClick={() => fetchClients(page + 1)}
+                                disabled={page >= totalPages}
+                                className="h-10 px-4 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                            >
+                                Próximo
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODAL CRIAR/EDITAR */}
@@ -263,9 +331,9 @@ export default function ClientsPage() {
                                         </label>
                                         <input
                                             value={form.document}
-                                            onChange={e => setForm({ ...form, document: e.target.value })}
+                                            onChange={e => setForm({ ...form, document: maskDocument(e.target.value) })}
                                             className="w-full h-12 px-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400"
-                                            placeholder="Apenas números"
+                                            placeholder="CPF ou CNPJ"
                                         />
                                     </div>
                                     <div>
@@ -274,8 +342,9 @@ export default function ClientsPage() {
                                         </label>
                                         <input
                                             value={form.phone}
-                                            onChange={e => setForm({ ...form, phone: e.target.value })}
+                                            onChange={e => setForm({ ...form, phone: maskPhone(e.target.value) })}
                                             className="w-full h-12 px-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400"
+                                            placeholder="(00) 00000-0000"
                                         />
                                     </div>
                                 </div>
@@ -326,6 +395,16 @@ export default function ClientsPage() {
                     </div>
                 </div>
             )}
+            {/* CONFIRM DELETE */}
+            <ConfirmModal
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+                title="Excluir Cliente"
+                message="Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita."
+                confirmText="Excluir"
+                loading={loading}
+            />
         </div>
     )
 }

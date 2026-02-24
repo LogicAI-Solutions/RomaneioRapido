@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ImageCropper from '../components/ImageCropper'
+import ConfirmModal from '../components/ConfirmModal'
 
 interface Category {
     id: number
@@ -343,8 +344,8 @@ export default function ProductsPage() {
                     <p className="text-xs text-gray-300 mt-1">Clique em "Novo Produto" para começar</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+                    <div className="overflow-x-auto min-h-[400px]">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50/80 border-b border-gray-100">
@@ -443,39 +444,29 @@ export default function ProductsPage() {
                                                             e.stopPropagation();
                                                             setOpenMenuId(openMenuId === p.id ? null : p.id);
                                                         }}
-                                                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
+                                                        className={`p-2 rounded-full transition-all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
                                                     >
                                                         <MoreVertical className="w-4 h-4" />
                                                     </button>
 
                                                     {openMenuId === p.id && (
                                                         <>
-                                                            <div className="fixed inset-0 z-[60]" onClick={() => setOpenMenuId(null)} />
-                                                            <div className="absolute right-0 top-10 w-32 bg-white rounded-xl shadow-xl border border-slate-100 z-[70] py-1 animate-in fade-in zoom-in-95 duration-200">
+                                                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                                            <div className="absolute right-0 top-10 w-36 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                                                                 <button
                                                                     onClick={() => { openEdit(p); setOpenMenuId(null); }}
-                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors"
+                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
                                                                 >
-                                                                    <Pencil className="w-3.5 h-3.5" /> Editar
+                                                                    <Pencil className="w-4 h-4" /> Editar
                                                                 </button>
                                                                 <button
                                                                     onClick={() => { setDeleteConfirm(p.id); setOpenMenuId(null); }}
-                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
                                                                 >
-                                                                    <Trash2 className="w-3.5 h-3.5" /> Excluir
+                                                                    <Trash2 className="w-4 h-4" /> Excluir
                                                                 </button>
                                                             </div>
                                                         </>
-                                                    )}
-
-                                                    {deleteConfirm === p.id && (
-                                                        <div className="absolute right-0 top-0 bg-white border border-red-100 rounded-xl shadow-lg p-2 z-[80] animate-in fade-in slide-in-from-right-4">
-                                                            <p className="text-[10px] font-bold text-red-600 mb-2 truncate">Excluir?</p>
-                                                            <div className="flex gap-1.5">
-                                                                <button onClick={() => handleDelete(p.id)} className="px-2 py-1 text-[10px] bg-red-500 text-white rounded-md font-bold hover:bg-red-600 transition-colors">Sim</button>
-                                                                <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] bg-slate-100 text-slate-600 rounded-md font-bold hover:bg-slate-200 transition-colors">Não</button>
-                                                            </div>
-                                                        </div>
                                                     )}
                                                 </div>
                                             </td>
@@ -764,6 +755,16 @@ export default function ProductsPage() {
                     onCancel={() => setCropImageSrc(null)}
                 />
             )}
+            {/* CONFIRM DELETE */}
+            <ConfirmModal
+                isOpen={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+                title="Excluir Produto"
+                message="Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita e afetará o histórico de movimentações."
+                confirmText="Excluir"
+                loading={loading}
+            />
         </div>
     )
 }
