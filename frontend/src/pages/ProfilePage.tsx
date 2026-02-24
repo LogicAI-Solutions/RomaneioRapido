@@ -11,7 +11,12 @@ import {
     ShieldCheck,
     CreditCard,
     Check,
-    AlertCircle
+    AlertCircle,
+    Store,
+    Phone,
+    Mail,
+    Key,
+    Zap
 } from 'lucide-react'
 import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
@@ -164,112 +169,144 @@ export default function ProfilePage() {
     const effectivePlanId = user?.plan_id === 'enterprise' ? 'pro' : (user?.plan_id || 'free');
 
     return (
-        <div className="max-w-4xl mx-auto pb-24 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto pb-24 px-4 sm:px-6 relative">
 
-            <div className="pt-8 pb-10">
-                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configurações</h1>
-                <p className="text-sm font-medium text-slate-500 mt-1">Gerencie seu perfil e assinatura</p>
+            {/* Subtle Brand Background Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-64 bg-brand-100/40 rounded-[100%] blur-[100px] pointer-events-none -z-10" />
+
+            <div className="pt-8 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Configurações</h1>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Gerencie suas preferências com facilidade</p>
+                </div>
+
+                {/* Refined Segmented Control */}
+                <div className="flex bg-white/80 backdrop-blur shadow-sm border border-slate-200/60 p-1.5 rounded-2xl w-fit">
+                    {(['general', 'subscription', 'security'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`flex items-center gap-2.5 px-6 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-300 ${activeTab === tab
+                                ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
+                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                }`}
+                        >
+                            {tab === 'general' && <UserIcon className="w-4 h-4" />}
+                            {tab === 'subscription' && <Crown className="w-4 h-4" />}
+                            {tab === 'security' && <ShieldCheck className="w-4 h-4" />}
+                            {tab === 'general' ? 'Geral' : tab === 'subscription' ? 'Assinatura' : 'Segurança'}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Segmented Control (Apple Style) */}
-            <div className="flex bg-slate-100 p-1 rounded-xl mb-10 w-fit">
-                {(['general', 'subscription', 'security'] as const).map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === tab
-                                ? 'bg-white text-slate-900 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700'
-                            }`}
-                    >
-                        {tab === 'general' && <UserIcon className="w-4 h-4" />}
-                        {tab === 'subscription' && <Crown className="w-4 h-4" />}
-                        {tab === 'security' && <ShieldCheck className="w-4 h-4" />}
-                        {tab === 'general' ? 'Geral' : tab === 'subscription' ? 'Assinatura' : 'Segurança'}
-                    </button>
-                ))}
-            </div>
-
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+            <div className="glass-card rounded-[2.5rem] overflow-hidden">
                 <div className="p-8 sm:p-12">
                     {activeTab === 'general' && (
-                        <div className="animate-in fade-in duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                             {/* Profile Header (Avatar + Name) */}
-                            <div className="flex flex-col sm:flex-row items-center gap-8 mb-12">
-                                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                    <div className="w-28 h-28 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden ring-4 ring-white shadow-md">
+                            <div className="flex flex-col sm:flex-row items-center gap-8 mb-12 relative group/header">
+                                <div
+                                    className="relative group cursor-pointer"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <div className="w-32 h-32 rounded-[2rem] bg-brand-50 flex items-center justify-center overflow-hidden ring-4 ring-white shadow-xl shadow-brand-500/10 transition-transform duration-500 group-hover:scale-[1.02]">
                                         {imagePreview ? (
-                                            <img src={imagePreview} alt="Avatar" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                            <img src={imagePreview} alt="Avatar" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                         ) : (
-                                            <span className="text-4xl font-bold text-slate-300">
+                                            <span className="text-5xl font-black text-brand-200">
                                                 {user?.full_name?.charAt(0)?.toUpperCase()}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Camera className="w-8 h-8 text-white" />
-                                    </div>
-                                    <div className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg border border-slate-100">
-                                        <Camera className="w-4 h-4 text-slate-600" />
+                                    <div className="absolute inset-0 bg-brand-900/40 backdrop-blur-[2px] rounded-[2rem] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-white">
+                                        <Camera className="w-8 h-8 mb-1 animate-bounce-slow" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">Alterar</span>
                                     </div>
                                 </div>
+
                                 <div className="text-center sm:text-left">
-                                    <h2 className="text-2xl font-bold text-slate-900">{user?.full_name}</h2>
-                                    <p className="text-slate-500 font-medium text-sm mt-1">{user?.email}</p>
+                                    <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">{user?.full_name}</h2>
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-xs font-bold mt-2">
+                                        <Zap className="w-3 h-3 fill-current" />
+                                        Membro Ativo
+                                    </div>
                                 </div>
+
                                 <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="sm:col-span-2 space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Nome Completo</label>
-                                        <input
-                                            required
-                                            value={form.full_name}
-                                            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                                            className="w-full h-11 px-4 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
-                                        />
+                            <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                                    <div className="sm:col-span-2 group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Nome Completo</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <UserIcon className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                required
+                                                value={form.full_name}
+                                                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="sm:col-span-2 space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Nome da Loja</label>
-                                        <input
-                                            value={form.store_name}
-                                            onChange={(e) => setForm({ ...form, store_name: e.target.value })}
-                                            className="w-full h-11 px-4 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
-                                        />
+                                    <div className="sm:col-span-2 group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Nome da Loja</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <Store className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                value={form.store_name}
+                                                onChange={(e) => setForm({ ...form, store_name: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">E-mail</label>
-                                        <input
-                                            required
-                                            type="email"
-                                            value={form.email}
-                                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                            className="w-full h-11 px-4 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
-                                        />
+                                    <div className="group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">E-mail</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <Mail className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                required
+                                                type="email"
+                                                value={form.email}
+                                                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Telefone</label>
-                                        <input
-                                            value={form.phone}
-                                            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                            className="w-full h-11 px-4 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
-                                        />
+                                    <div className="group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Telefone</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <Phone className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                value={form.phone}
+                                                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                                placeholder="(00) 00000-0000"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="pt-6 flex">
+                                <div className="pt-6 flex justify-end">
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="h-11 px-6 font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2 active:scale-95 disabled:opacity-60"
+                                        className="h-12 px-8 font-bold bg-brand-600 text-white rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/30 flex items-center gap-2 active:scale-95 disabled:opacity-60"
                                     >
-                                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                                         Salvar Alterações
                                     </button>
                                 </div>
@@ -278,101 +315,136 @@ export default function ProfilePage() {
                     )}
 
                     {activeTab === 'subscription' && (
-                        <div className="animate-in fade-in duration-500 relative">
-                            {isLoadingUsage && <LoadingOverlay message="Caregando..." />}
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative max-w-4xl mx-auto">
+                            {isLoadingUsage && <LoadingOverlay message="Caregando métricas..." />}
 
-                            <div className="flex flex-col md:flex-row gap-12 mb-12">
-                                {/* Current Plan Status */}
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-slate-900 mb-6">Plano Atual</h3>
-                                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h4 className="text-2xl font-bold text-slate-900">{currentPlan.name}</h4>
-                                            <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Ativo</span>
-                                        </div>
-                                        <p className="text-slate-500 text-sm mb-6">{currentPlan.description}</p>
+                            <div className="flex flex-col gap-10 mb-8">
+                                {/* Current Plan Status - Prominent Top Card */}
+                                <div className="w-full">
+                                    <div className="bg-white border border-brand-100 rounded-[2.5rem] p-8 sm:p-10 shadow-xl shadow-brand-100/50 relative overflow-hidden group/plan">
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-[80px] -mr-20 -mt-20 transition-transform duration-1000 group-hover/plan:scale-125" />
 
-                                        <div className="space-y-5">
-                                            <div>
-                                                <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                                                    <span>Produtos</span>
-                                                    <span>{usage.products.used} / {usage.products.limit >= 999999 ? '∞' : usage.products.limit}</span>
+                                        <div className="relative z-10 flex flex-col md:flex-row gap-10 items-center md:items-start justify-between">
+                                            <div className="flex-1 text-center md:text-left">
+                                                <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 justify-center md:justify-start">
+                                                    <h4 className="text-4xl font-extrabold text-slate-800 tracking-tight">{currentPlan.name}</h4>
+                                                    <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-xs font-black uppercase tracking-widest rounded-full flex items-center gap-2 shadow-sm">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" /> Ativo
+                                                    </span>
                                                 </div>
-                                                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                                                        style={{ width: `${calculateProgress(usage.products.used, usage.products.limit)}%` }}
-                                                    />
-                                                </div>
+                                                <p className="text-slate-500 text-base font-medium max-w-sm mx-auto md:mx-0 leading-relaxed">{currentPlan.description}</p>
                                             </div>
-                                            <div>
-                                                <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1.5">
-                                                    <span>Categorias</span>
-                                                    <span>{usage.categories.used} / {usage.categories.limit >= 999999 ? '∞' : usage.categories.limit}</span>
+
+                                            {/* Progress Meters */}
+                                            <div className="w-full md:w-[28rem] flex-shrink-0 space-y-7 bg-slate-50/50 p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-inner">
+                                                <div className="group/progress">
+                                                    <div className="flex justify-between items-end mb-3">
+                                                        <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Produtos</span>
+                                                        <span className="text-base font-black text-brand-600"><span className="text-slate-800 text-2xl">{usage.products.used}</span> <span className="text-slate-300 mx-1">/</span> {usage.products.limit >= 999999 ? '∞' : usage.products.limit}</span>
+                                                    </div>
+                                                    <div className="h-3 w-full bg-slate-200/60 rounded-full overflow-hidden p-[3px] shadow-inner">
+                                                        <div
+                                                            className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden"
+                                                            style={{ width: `${calculateProgress(usage.products.used, usage.products.limit)}%` }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                                                        style={{ width: `${calculateProgress(usage.categories.used, usage.categories.limit)}%` }}
-                                                    />
+
+                                                <div className="group/progress">
+                                                    <div className="flex justify-between items-end mb-3">
+                                                        <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Categorias</span>
+                                                        <span className="text-base font-black text-brand-600"><span className="text-slate-800 text-2xl">{usage.categories.used}</span> <span className="text-slate-300 mx-1">/</span> {usage.categories.limit >= 999999 ? '∞' : usage.categories.limit}</span>
+                                                    </div>
+                                                    <div className="h-3 w-full bg-slate-200/60 rounded-full overflow-hidden p-[3px] shadow-inner">
+                                                        <div
+                                                            className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden"
+                                                            style={{ width: `${calculateProgress(usage.categories.used, usage.categories.limit)}%` }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Upgrades */}
-                                <div className="flex-[1.5]">
-                                    <h3 className="text-lg font-bold text-slate-900 mb-6">Planos Disponíveis</h3>
-                                    <div className="grid gap-4">
+                                {/* Upgrades List */}
+                                <div className="w-full mt-4">
+                                    <div className="mb-8 text-center md:text-left pl-2">
+                                        <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">Evolua seu plano</h3>
+                                        <p className="text-slate-500 font-medium mt-1 text-sm">Escolha a melhor opção para o tamanho do seu negócio.</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
                                         {PLANS.filter(p => !p.hidden).map((p) => {
                                             const isSelected = p.id === effectivePlanId
+                                            const isPopular = p.highlight
 
+                                            // Flex column layout inside the card ensures the button is always at the bottom
                                             return (
                                                 <div
                                                     key={p.id}
-                                                    className={`p-5 rounded-2xl border transition-all flex items-center justify-between gap-4 ${isSelected
-                                                            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                                                    className={`group p-8 rounded-[2.5rem] border transition-all duration-300 flex flex-col h-full relative overflow-hidden ${isSelected
+                                                        ? 'border-brand-300 bg-brand-50 shadow-xl shadow-brand-200/50 ring-2 ring-brand-100'
+                                                        : 'border-slate-200/80 bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:-translate-y-2'
                                                         }`}
                                                 >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+                                                    {isPopular && !isSelected && (
+                                                        <div className="absolute -top-4 -right-4 w-24 h-24 bg-brand-100 rounded-full blur-2xl opacity-50 transition-transform duration-500 group-hover:scale-150" />
+                                                    )}
+
+                                                    <div className="flex flex-col items-center sm:items-start lg:items-center xl:items-start gap-5 mb-8 text-center sm:text-left lg:text-center xl:text-left">
+                                                        <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30' : 'bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-600 group-hover:shadow-lg'
                                                             }`}>
-                                                            <CreditCard className="w-5 h-5" />
+                                                            <CreditCard className="w-7 h-7" />
                                                         </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <h4 className="font-bold text-slate-900">{p.name}</h4>
-                                                                {p.highlight && <span className="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded flex items-center gap-1">POPULAR</span>}
-                                                            </div>
-                                                            <p className="text-xs text-slate-500 font-medium">{p.features.slice(0, 2).join(' • ')}</p>
+                                                        <div className="mt-2 sm:mt-0">
+                                                            <h4 className="font-extrabold text-slate-800 text-2xl tracking-tight leading-none mb-3">{p.name}</h4>
+                                                            {isPopular && <span className="inline-block text-[10px] font-black bg-brand-600 text-white px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-sm ring-4 ring-brand-100/50">Mais Popular</span>}
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-4 text-right">
-                                                        <div className="hidden sm:block">
-                                                            <p className="font-bold text-slate-900">{p.price}</p>
-                                                            <p className="text-[10px] uppercase font-semibold text-slate-400">Mensal</p>
+                                                    <div className="mb-10 flex-grow">
+                                                        <ul className="space-y-4">
+                                                            {p.features.slice(0, 3).map((feat, i) => (
+                                                                <li key={i} className="flex items-start gap-3 text-[14px] font-semibold text-slate-600 justify-center sm:justify-start lg:justify-center xl:justify-start">
+                                                                    <Check className={`w-5 h-5 shrink-0 mt-0 ${isSelected ? 'text-brand-600' : 'text-slate-300 group-hover:text-brand-500'}`} />
+                                                                    <span className="leading-relaxed text-left">{feat}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+
+                                                    <div className="border-t border-slate-100/80 pt-8 mt-auto">
+                                                        <div className="flex items-baseline justify-center sm:justify-start lg:justify-center xl:justify-start gap-2 mb-6">
+                                                            <p className="font-black text-slate-800 text-4xl tracking-tighter">{p.price}</p>
+                                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">/ mês</p>
                                                         </div>
                                                         <button
                                                             onClick={() => !isSelected && handleSubscribe(p.id)}
                                                             disabled={isSelected || isSubscribing === p.id}
-                                                            className={`h-9 px-4 rounded-lg text-sm font-semibold transition-colors ${isSelected
-                                                                    ? 'bg-transparent text-blue-600 cursor-default'
-                                                                    : 'bg-slate-900 text-white hover:bg-slate-800'
+                                                            className={`w-full h-14 rounded-[1.25rem] text-[15px] font-black transition-all flex items-center justify-center gap-2 ${isSelected
+                                                                ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30 cursor-default ring-4 ring-brand-100'
+                                                                : 'bg-slate-100 text-slate-700 hover:bg-brand-600 hover:text-white shadow-sm hover:shadow-brand-500/20 hover:scale-[1.02]'
                                                                 }`}
                                                         >
-                                                            {isSubscribing === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : isSelected ? 'Ativo' : 'Escolher'}
+                                                            {isSubscribing === p.id
+                                                                ? <Loader2 className="w-5 h-5 animate-spin" />
+                                                                : isSelected ? 'Plano Atual' : 'Assinar Plano'}
                                                         </button>
                                                     </div>
                                                 </div>
                                             )
                                         })}
                                     </div>
-                                    <div className="mt-4 flex items-start gap-3 p-4 bg-slate-50 rounded-xl text-xs text-slate-600">
-                                        <AlertCircle className="w-4 h-4 text-slate-400 shrink-0" />
-                                        <p>Você pode fazer downgrade ou upgrade do seu plano a qualquer momento. Os valores serão ajustados na próxima fatura.</p>
+                                    <div className="mt-10 flex flex-col sm:flex-row items-center sm:items-start gap-5 p-6 bg-brand-50 border border-brand-100/50 rounded-[2rem] text-sm font-medium text-brand-800 shadow-sm max-w-3xl mx-auto text-center sm:text-left transition-all hover:bg-white hover:shadow-md">
+                                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+                                            <AlertCircle className="w-6 h-6 text-brand-500" />
+                                        </div>
+                                        <p className="leading-relaxed mt-1">Nossos planos são flexíveis. Você pode alterar seu plano a qualquer momento sem burocracia, e o ajuste no valor ocorre automaticamente na próxima fatura.</p>
                                     </div>
                                 </div>
                             </div>
@@ -380,45 +452,65 @@ export default function ProfilePage() {
                     )}
 
                     {activeTab === 'security' && (
-                        <div className="animate-in fade-in duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
 
-                            <div className="mb-8 max-w-2xl">
-                                <h3 className="text-lg font-bold text-slate-900 tracking-tight">Segurança</h3>
-                                <p className="text-sm font-medium text-slate-500 mt-1">Atualize sua senha para manter sua conta segura.</p>
+                            <div className="mb-10 max-w-2xl">
+                                <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">Segurança da Conta</h3>
+                                <p className="text-sm font-medium text-slate-500 mt-1">Atualize sua senha para manter o acesso restrito e protegido.</p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Nova Senha</label>
-                                        <input
-                                            type="password"
-                                            value={form.password}
-                                            onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                            className="w-full h-11 px-4 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
-                                            placeholder="••••••••"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Confirmar Nova Senha</label>
-                                        <input
-                                            type="password"
-                                            value={form.confirm_password}
-                                            onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
-                                            className="w-full h-11 px-4 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
-                                            placeholder="••••••••"
-                                        />
+                                <div className="p-6 bg-amber-50 rounded-3xl border border-amber-200/60 mb-8 flex items-start gap-4">
+                                    <ShieldCheck className="w-6 h-6 text-amber-500 shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-900 mb-1">Dica de Segurança</p>
+                                        <p className="text-xs font-medium text-amber-700/80 leading-relaxed">
+                                            Recomendamos usar uma combinação de letras maiúsculas, minúsculas, números e símbolos para criar uma senha forte e inquebrável.
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="pt-6">
+                                <div className="space-y-5">
+                                    <div className="group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Nova Senha</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <Key className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                type="password"
+                                                value={form.password}
+                                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Confirme a Nova Senha</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <Key className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                type="password"
+                                                value={form.confirm_password}
+                                                onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 flex justify-start">
                                     <button
                                         type="submit"
                                         disabled={saving || !form.password}
-                                        className="h-11 px-6 font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2 active:scale-95 disabled:opacity-60"
+                                        className="h-12 px-8 font-bold bg-slate-800 text-white rounded-2xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-300 flex items-center gap-2 active:scale-95 disabled:opacity-60"
                                     >
-                                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
                                         Atualizar Senha
                                     </button>
                                 </div>

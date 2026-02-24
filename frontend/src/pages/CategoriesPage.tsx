@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ } from 'lucide-react'
 
 interface Category {
     id: number
@@ -28,6 +28,7 @@ export default function CategoriesPage() {
     const [isReordering, setIsReordering] = useState(false)
     const [reorderList, setReorderList] = useState<Category[]>([])
     const [savingOrder, setSavingOrder] = useState(false)
+    const [sortingAZ, setSortingAZ] = useState(false)
 
     // Drag state
     const dragItem = useRef<number | null>(null)
@@ -120,6 +121,23 @@ export default function CategoriesPage() {
         }
     }
 
+    const sortAZ = async () => {
+        if (categories.length < 2) return
+        setSortingAZ(true)
+        try {
+            const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+            const items = sorted.map((cat, i) => ({ id: cat.id, position: i }))
+            await api.post('/categories/reorder', { items })
+            await fetchCategories()
+            toast.success('Categorias ordenadas de A-Z com sucesso!')
+        } catch (err) {
+            console.error('Erro ao ordenar A-Z:', err)
+            toast.error('Erro ao ordenar categorias')
+        } finally {
+            setSortingAZ(false)
+        }
+    }
+
     // Drag and Drop handlers
     const handleDragStart = (index: number) => {
         dragItem.current = index
@@ -178,6 +196,13 @@ export default function CategoriesPage() {
                     ) : (
                         <>
                             <button
+                                onClick={sortAZ}
+                                disabled={sortingAZ || savingOrder}
+                                className="h-9 px-4 text-[13px] font-semibold border border-blue-200 text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2 disabled:opacity-60"
+                            >
+                                {sortingAZ ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownAZ className="w-4 h-4" />} A-Z
+                            </button>
+                            <button
                                 onClick={cancelReorder}
                                 className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
                             >
@@ -185,7 +210,7 @@ export default function CategoriesPage() {
                             </button>
                             <button
                                 onClick={saveOrder}
-                                disabled={savingOrder}
+                                disabled={savingOrder || sortingAZ}
                                 className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60"
                             >
                                 {savingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
