@@ -16,11 +16,28 @@ import {
     Phone,
     Mail,
     Key,
-    Zap
+    Zap,
+    Eye,
+    EyeOff
 } from 'lucide-react'
 import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
 import LoadingOverlay from '../components/LoadingOverlay'
+
+const calculatePasswordStrength = (password: string): { score: number, color: string, label: string } => {
+    if (!password) return { score: 0, color: 'bg-slate-200', label: '' }
+
+    let score = 0
+    if (password.length > 5) score += 1
+    if (password.length >= 8) score += 1
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
+    if (/[0-9]/.test(password)) score += 1
+    if (/[^A-Za-z0-9]/.test(password)) score += 1
+
+    if (score < 2) return { score: 25, color: 'bg-red-500', label: 'Fraca' }
+    if (score < 4) return { score: 60, color: 'bg-amber-400', label: 'Razoável' }
+    return { score: 100, color: 'bg-emerald-500', label: 'Forte' }
+}
 
 export default function ProfilePage() {
     const { user } = useAuth()
@@ -48,6 +65,9 @@ export default function ProfilePage() {
         password: '',
         confirm_password: ''
     })
+
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     useEffect(() => {
         if (user) {
@@ -478,13 +498,37 @@ export default function ProfilePage() {
                                                 <Key className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
                                             </div>
                                             <input
-                                                type="password"
+                                                type={showPassword ? 'text' : 'password'}
                                                 value={form.password}
                                                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                                className="w-full h-12 pl-12 pr-12 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
                                                 placeholder="••••••••"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
                                         </div>
+                                        {/* Password Strength Indicator */}
+                                        {form.password && (
+                                            <div className="mt-3 px-1 animate-in fade-in zoom-in-95 duration-300">
+                                                <div className="flex justify-between items-center mb-1.5">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Força da Senha</span>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${calculatePasswordStrength(form.password).color.replace('bg-', 'text-')}`}>
+                                                        {calculatePasswordStrength(form.password).label}
+                                                    </span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex gap-0.5">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all duration-500 ${calculatePasswordStrength(form.password).color}`}
+                                                        style={{ width: `${calculatePasswordStrength(form.password).score}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="group/input">
@@ -494,12 +538,19 @@ export default function ProfilePage() {
                                                 <Key className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
                                             </div>
                                             <input
-                                                type="password"
+                                                type={showConfirmPassword ? 'text' : 'password'}
                                                 value={form.confirm_password}
                                                 onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
-                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                                className="w-full h-12 pl-12 pr-12 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
                                                 placeholder="••••••••"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                            >
+                                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
