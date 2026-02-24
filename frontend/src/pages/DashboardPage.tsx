@@ -23,7 +23,8 @@ interface Product {
 export default function DashboardPage() {
     const navigate = useNavigate()
     const [stats, setStats] = useState<Stats>({ totalProducts: 0, todayMovements: 0, lowStockCount: 0 })
-    const [recentProducts, setRecentProducts] = useState<Product[]>([])
+    const [allProducts, setAllProducts] = useState<Product[]>([])
+    const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -51,9 +52,9 @@ export default function DashboardPage() {
                     lowStockCount: lowStockFiltered.length,
                 })
 
-                // Get 10 most recent products
-                const sortedProducts = [...dbProducts].sort((a: any, b: any) => b.id - a.id).slice(0, 10)
-                setRecentProducts(sortedProducts)
+                // Get all products sorted by most recent for filtering
+                const sortedProducts = [...dbProducts].sort((a: any, b: any) => b.id - a.id)
+                setAllProducts(sortedProducts)
 
             } catch (err) {
                 console.error('Erro ao buscar dados do dashboard:', err)
@@ -69,6 +70,10 @@ export default function DashboardPage() {
         if (p.stock_quantity <= p.min_stock) return { label: 'Baixo', class: 'bg-orange-50 text-orange-600 border-orange-100/50 shadow-sm shadow-orange-500/5' }
         return { label: 'Estoque OK', class: 'bg-teal-50 text-teal-600 border-teal-100/50 shadow-sm shadow-teal-500/5' }
     }
+
+    const displayProducts = searchQuery
+        ? allProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.sku?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 10)
+        : allProducts.slice(0, 10)
 
     if (loading) {
         return (
@@ -158,6 +163,8 @@ export default function DashboardPage() {
                         <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-brand-500 transition-colors" />
                         <input
                             placeholder="Buscar produto..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full sm:w-80 h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-semibold"
                         />
                     </div>
@@ -175,14 +182,14 @@ export default function DashboardPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100/50">
-                            {recentProducts.length === 0 ? (
+                            {displayProducts.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="py-20 text-center text-sm font-bold text-slate-400 italic">
-                                        Nenhum produto cadastrado ainda.
+                                        Nenhum produto {searchQuery ? 'encontrado' : 'cadastrado ainda'}.
                                     </td>
                                 </tr>
                             ) : (
-                                recentProducts.map((p: Product) => {
+                                displayProducts.map((p: Product) => {
                                     const status = getStockStatus(p)
                                     return (
                                         <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -228,7 +235,7 @@ export default function DashboardPage() {
                     </table>
                 </div>
 
-                {recentProducts.length > 0 && (
+                {allProducts.length > 0 && (
                     <div className="p-6 border-t border-slate-100/50 text-center bg-slate-50/20">
                         <button
                             onClick={() => navigate('/produtos')}
