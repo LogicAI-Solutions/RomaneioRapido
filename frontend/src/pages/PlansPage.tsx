@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Package, LayoutDashboard, Loader2 } from 'lucide-react'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { PLANS } from '../constants/plans'
 import type { Plan } from '../constants/plans'
 import api from '../services/api'
@@ -56,8 +57,9 @@ export default function PlansPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="min-h-screen flex items-center justify-center bg-white relative">
+                <LoadingOverlay message="Consultando Planos..." />
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin opacity-20" />
             </div>
         )
     }

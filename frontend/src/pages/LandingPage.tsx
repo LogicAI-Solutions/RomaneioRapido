@@ -130,7 +130,7 @@ export default function LandingPage() {
 
                             {/* Mockup Visual */}
                             <div className="relative">
-                                <div className="absolute -inset-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl -z-10"></div>
+                                <div className="absolute -inset-4 bg-gradient-to-br from-blue-50 to-brand-50 rounded-3xl -z-10"></div>
                                 <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl overflow-hidden">
                                     {/* Mini header */}
                                     <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
@@ -281,23 +281,6 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* Números */}
-                <section className="py-16 bg-gray-50/60">
-                    <div className="max-w-6xl mx-auto px-5">
-                        <div className="grid grid-cols-3 gap-8 text-center">
-                            {[
-                                { value: '99.9%', label: 'Uptime garantido' },
-                                { value: '<1s', label: 'Tempo de resposta' },
-                                { value: '24/7', label: 'Sistema disponível' },
-                            ].map((n, i) => (
-                                <div key={i}>
-                                    <p className="text-3xl md:text-4xl font-extrabold text-blue-600">{n.value}</p>
-                                    <p className="text-sm text-gray-400 font-medium mt-1">{n.label}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
 
                 {/* Planos */}
                 <section id="planos" className="py-24 bg-white">
@@ -369,7 +352,7 @@ export default function LandingPage() {
                     <div className="max-w-3xl mx-auto px-5 text-center">
                         <div className="bg-gray-900 rounded-3xl p-10 md:p-16 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
-                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-600/15 rounded-full blur-[60px] translate-y-1/3 -translate-x-1/3"></div>
+                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-600/15 rounded-full blur-[60px] translate-y-1/3 -translate-x-1/3"></div>
 
                             <div className="relative z-10">
                                 <h2 className="text-2xl md:text-4xl font-extrabold text-white mb-4 tracking-tight">

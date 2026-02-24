@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
 import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check } from 'lucide-react'
 
@@ -202,8 +203,9 @@ export default function CategoriesPage() {
             )}
 
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                <div className="flex flex-col items-center justify-center py-20 relative min-h-[300px]">
+                    <LoadingOverlay message="Buscando Categorias..." />
+                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin opacity-20" />
                 </div>
             ) : categories.length === 0 ? (
                 <div className="text-center py-20">

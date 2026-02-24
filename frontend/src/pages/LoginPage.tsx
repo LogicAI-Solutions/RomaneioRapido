@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode } from 'lucide-react'
 
 export default function LoginPage() {
@@ -28,109 +29,116 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+        <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50/30 font-sans selection:bg-brand-500/30">
+            {isLoading && <LoadingOverlay message="Autenticando..." />}
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900 relative flex-col justify-between p-16">
+            <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-between p-20 overflow-hidden">
+                {/* Decorative background elements */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-600/20 rounded-full blur-[120px] -mr-64 -mt-64" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-600/10 rounded-full blur-[120px] -ml-64 -mb-64" />
+
                 {/* Botão Voltar */}
                 <button
                     onClick={() => navigate('/')}
-                    className="flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium w-fit group"
+                    className="flex items-center gap-3 text-slate-400 hover:text-white transition-all text-sm font-bold w-fit group relative z-10 mb-16"
                 >
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    Voltar para o início
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-600 transition-colors">
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    </div>
+                    <span>Voltar para o início</span>
                 </button>
 
                 {/* Conteúdo Central */}
-                <div className="max-w-md">
-                    <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-8 border border-white/20">
-                        <Package className="w-8 h-8 text-white" />
+                <div className="max-w-md relative z-10">
+                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/20 shadow-2xl">
+                        <Package className="w-8 h-8 text-brand-400" />
                     </div>
-                    <h1 className="text-4xl font-extrabold text-white leading-tight mb-6 tracking-tight">
-                        Controle seu estoque com a velocidade que seu negócio exige.
+                    <h1 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tighter">
+                        Controle seu estoque com <span className="text-brand-400">velocidade</span> máxima.
                     </h1>
-                    <p className="text-blue-100/70 text-lg mb-12">
-                        Gerencie movimentações, organize categorias e acompanhe relatórios em tempo real em uma única plataforma.
+                    <p className="text-slate-400 text-lg mb-12 font-medium leading-relaxed">
+                        Gerencie movimentações, organize categorias e acompanhe relatórios em tempo real com elegância e eficiência.
                     </p>
 
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         {[
-                            { icon: ScanBarcode, text: 'Leitura rápida de código de barras' },
-                            { icon: Zap, text: 'Interface ultra-rápida sem delay' },
-                            { icon: BarChart3, text: 'Dashboards visuais e inteligentes' }
+                            { icon: ScanBarcode, text: 'Leitura rápida de código de barras', color: 'text-brand-400' },
+                            { icon: Zap, text: 'Interface ultra-rápida sem delay', color: 'text-amber-400' },
+                            { icon: BarChart3, text: 'Dashboards visuais e inteligentes', color: 'text-emerald-400' }
                         ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-4 text-white">
-                                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                                    <item.icon className="w-5 h-5 text-blue-300" />
+                            <div key={i} className="flex items-center gap-5 text-slate-300">
+                                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-inner group transition-all hover:bg-white/10">
+                                    <item.icon className={`w-6 h-6 ${item.color}`} />
                                 </div>
-                                <span className="text-sm font-medium">{item.text}</span>
+                                <span className="text-base font-bold tracking-tight">{item.text}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Rodapé Visual */}
-                <div className="flex items-center gap-4 text-white/40 text-xs font-medium">
+                <div className="flex items-center gap-6 text-slate-500 text-xs font-bold uppercase tracking-widest relative z-10 mt-auto pt-10">
                     <span>© 2026 RomaneioRapido</span>
-                    <span className="w-1 h-1 rounded-full bg-white/20" />
-                    <span>Segurança Garantida</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-600" />
+                    <span>Segurança Bancária</span>
                 </div>
             </div>
 
             {/* Seção Direita - Formulário */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col bg-white">
                 {/* Mobile Header (Apenas em Mobile) */}
-                <div className="lg:hidden p-6 flex items-center justify-between border-b border-gray-50">
-                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/')}>
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-all duration-300">
-                            <Package className="w-4 h-4 text-white" />
+                <div className="lg:hidden p-6 flex items-center justify-between border-b border-slate-100">
+                    <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
+                        <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+                            <Package className="w-5 h-5 text-white" />
                         </div>
-                        <span className="font-bold text-gray-900">RomaneioRapido</span>
+                        <span className="font-black text-slate-900 tracking-tight">Romaneio<span className="text-brand-600">Rapido</span></span>
                     </div>
-                    <button onClick={() => navigate('/')} className="text-xs font-semibold text-blue-600">
-                        Sair
+                    <button onClick={() => navigate('/')} className="text-xs font-black text-brand-600 uppercase tracking-wider">
+                        Voltar
                     </button>
                 </div>
 
-                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-20">
-                    <div className="w-full max-w-sm">
+                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-slate-50/30">
+                    <div className="w-full max-w-sm animate-slide-up">
                         {/* Boas vindas */}
-                        <div className="mb-10 text-center lg:text-left">
-                            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Acesse sua conta</h2>
-                            <p className="text-gray-500 text-sm">Insira suas credenciais para gerenciar seu estoque.</p>
+                        <div className="mb-12 text-center lg:text-left">
+                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-3">Bem-vindo.</h2>
+                            <p className="text-slate-500 font-semibold italic text-sm">Insira suas credenciais para acessar a plataforma.</p>
                         </div>
 
                         {/* Formulário */}
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="space-y-1.5">
-                                <label className="text-[13px] font-bold text-gray-700 ml-1">Email</label>
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="exemplo@email.com"
                                     required
-                                    className="w-full h-[54px] px-5 bg-white border border-gray-200 rounded-[10px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-sm"
+                                    className="w-full h-14 px-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
                                 />
                             </div>
 
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[13px] font-bold text-gray-700">Senha</label>
-                                    <button type="button" className="text-[11px] font-bold text-blue-600 hover:underline">Esqueceu a senha?</button>
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
+                                    <button type="button" className="text-[11px] font-black text-brand-600 hover:text-brand-700 tracking-tight">Esqueceu a senha?</button>
                                 </div>
-                                <div className="relative">
+                                <div className="relative group">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••••••"
                                         required
-                                        className="w-full h-[54px] px-5 bg-white border border-gray-200 rounded-[10px] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-sm pr-12"
+                                        className="w-full h-14 px-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm pr-14 shadow-sm"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-brand-600 p-2 transition-colors"
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
@@ -138,21 +146,21 @@ export default function LoginPage() {
                             </div>
 
                             {error && (
-                                <div className="p-4 bg-red-50 border border-red-100 rounded-[10px] flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <div className="w-1.5 h-10 bg-red-500 rounded-full" />
-                                    <p className="text-sm text-red-600 font-bold">{error}</p>
+                                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm shadow-red-500/5">
+                                    <div className="w-1 h-8 bg-red-500 rounded-full" />
+                                    <p className="text-xs text-red-600 font-black uppercase tracking-tight">{error}</p>
                                 </div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-[54px] bg-blue-600 text-white font-bold rounded-[10px] shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-blue-600/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm"
+                                className="w-full h-16 bg-brand-600 text-white font-black rounded-2xl shadow-xl shadow-brand-500/20 hover:bg-brand-700 hover:shadow-brand-500/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-4 text-sm tracking-tight"
                             >
                                 {isLoading ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Autenticando...
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                        <span>Autenticando...</span>
                                     </>
                                 ) : (
                                     'Entrar no Sistema'
@@ -160,9 +168,9 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        <div className="mt-12 text-center">
-                            <p className="text-xs text-gray-400 font-medium">
-                                Não tem uma conta? <button className="text-blue-600 font-bold hover:underline">Solicitar acesso</button>
+                        <div className="mt-16 text-center">
+                            <p className="text-xs text-slate-400 font-bold tracking-tight">
+                                Não tem uma conta ainda? <button className="text-brand-600 font-black hover:underline px-1">Solicitar acesso ao Romaneio</button>
                             </p>
                         </div>
                     </div>

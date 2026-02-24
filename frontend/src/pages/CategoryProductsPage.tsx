@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
 import {
     ArrowLeft,
@@ -237,8 +238,9 @@ export default function CategoryProductsPage() {
 
     if (!category) {
         return (
-            <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+            <div className="flex items-center justify-center py-20 relative min-h-screen">
+                <LoadingOverlay message="Buscando informações da categoria..." />
+                <Loader2 className="w-6 h-6 text-blue-500 animate-spin opacity-20" />
             </div>
         )
     }
@@ -284,8 +286,9 @@ export default function CategoryProductsPage() {
 
             {/* Product List */}
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                <div className="flex flex-col items-center justify-center py-20 relative min-h-[400px]">
+                    <LoadingOverlay message="Carregando Produtos..." />
+                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin opacity-20" />
                 </div>
             ) : products.length === 0 ? (
                 <div className="text-center py-20">
