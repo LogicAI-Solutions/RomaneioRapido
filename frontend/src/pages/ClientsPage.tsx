@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import type { FormEvent } from 'react'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { Plus, Pencil, Trash2, X, Search, Users, Phone, Mail, MoreVertical } from 'lucide-react'
-import { maskDocument, maskPhone } from '../utils/masks'
+import { Plus, Pencil, Trash2, Search, Users, Phone, Mail, MoreVertical } from 'lucide-react'
 import ConfirmModal from '../components/ConfirmModal'
+import ClientModal from '../components/ClientModal'
 
 interface Client {
     id: number
@@ -21,7 +20,6 @@ export default function ClientsPage() {
     const [loading, setLoading] = useState(true)
     const [modalOpen, setModalOpen] = useState(false)
     const [editing, setEditing] = useState<Client | null>(null)
-    const [saving, setSaving] = useState(false)
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
@@ -31,14 +29,6 @@ export default function ClientsPage() {
     const [totalPages, setTotalPages] = useState(1)
     const [totalClients, setTotalClients] = useState(0)
     const perPage = 10
-
-    const [form, setForm] = useState({
-        name: '',
-        phone: '',
-        document: '',
-        email: '',
-        notes: ''
-    })
 
     const fetchClients = async (p: number = page) => {
         try {
@@ -69,46 +59,12 @@ export default function ClientsPage() {
 
     const openCreate = () => {
         setEditing(null)
-        setForm({ name: '', phone: '', document: '', email: '', notes: '' })
         setModalOpen(true)
     }
 
     const openEdit = (c: Client) => {
         setEditing(c)
-        setForm({
-            name: c.name,
-            phone: c.phone || '',
-            document: c.document || '',
-            email: c.email || '',
-            notes: c.notes || ''
-        })
         setModalOpen(true)
-    }
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault()
-        setSaving(true)
-        try {
-            const payload = {
-                name: form.name,
-                phone: form.phone || null,
-                document: form.document || null,
-                email: form.email || null,
-                notes: form.notes || null,
-            }
-            if (editing) {
-                await api.put(`/clients/${editing.id}`, payload)
-            } else {
-                await api.post('/clients/', payload)
-            }
-            setModalOpen(false)
-            fetchClients()
-            toast.success('Cliente salvo com sucesso!')
-        } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao salvar cliente')
-        } finally {
-            setSaving(false)
-        }
     }
 
     const handleDelete = async (id: number) => {
@@ -291,110 +247,12 @@ export default function ClientsPage() {
             </div>
 
             {/* MODAL CRIAR/EDITAR */}
-            {modalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !saving && setModalOpen(false)} />
-
-                    <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 shadow-brand-900/20">
-                        <div className="px-8 py-6 border-b border-slate-100/50 flex items-center justify-between bg-slate-50/50">
-                            <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                                {editing ? 'Editar Cliente' : 'Novo Cliente'}
-                            </h2>
-                            <button
-                                onClick={() => !saving && setModalOpen(false)}
-                                className="p-2 text-slate-400 hover:bg-white hover:text-slate-700 rounded-xl transition-all hover:shadow-sm"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="p-8">
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">
-                                        Nome do Cliente *
-                                    </label>
-                                    <input
-                                        required
-                                        autoFocus
-                                        value={form.name}
-                                        onChange={e => setForm({ ...form, name: e.target.value })}
-                                        className="w-full h-12 px-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400"
-                                        placeholder="Ex: João da Silva / Loja do Centro"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">
-                                            CPF / CNPJ
-                                        </label>
-                                        <input
-                                            value={form.document}
-                                            onChange={e => setForm({ ...form, document: maskDocument(e.target.value) })}
-                                            className="w-full h-12 px-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400"
-                                            placeholder="CPF ou CNPJ"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">
-                                            Telefone / WhatsApp
-                                        </label>
-                                        <input
-                                            value={form.phone}
-                                            onChange={e => setForm({ ...form, phone: maskPhone(e.target.value) })}
-                                            className="w-full h-12 px-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400"
-                                            placeholder="(00) 00000-0000"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">
-                                        E-mail
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={form.email}
-                                        onChange={e => setForm({ ...form, email: e.target.value })}
-                                        className="w-full h-12 px-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400"
-                                        placeholder="contato@cliente.com"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">
-                                        Observações
-                                    </label>
-                                    <textarea
-                                        value={form.notes}
-                                        onChange={e => setForm({ ...form, notes: e.target.value })}
-                                        className="w-full p-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all placeholder-slate-400 min-h-[100px] resize-y"
-                                        placeholder="Endereço de entrega, referências, etc."
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mt-8 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setModalOpen(false)}
-                                    className="px-6 py-3 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving || !form.name.trim()}
-                                    className="px-8 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 disabled:bg-slate-300 disabled:shadow-none transition-all active:scale-95"
-                                >
-                                    {saving ? 'Salvando...' : 'Salvar Cliente'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <ClientModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onSuccess={() => fetchClients()}
+                editingClient={editing}
+            />
             {/* CONFIRM DELETE */}
             <ConfirmModal
                 isOpen={!!deleteConfirm}

@@ -92,25 +92,21 @@ export default function AppLayout() {
 
                 {/* User */}
                 <div className={`py-5 border-t border-slate-100/50 bg-slate-50/30 transition-all ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                    <div className={`flex items-center mb-4 transition-all ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}>
-                        <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-sm font-bold text-brand-600 overflow-hidden shrink-0 border-2 border-white shadow-sm">
+                    <div
+                        onClick={() => { navigate('/perfil'); setSidebarOpen(false) }}
+                        title={isCollapsed ? "Meu Perfil" : ""}
+                        className={`flex items-center mb-4 cursor-pointer group transition-all rounded-xl hover:bg-white border border-transparent hover:border-brand-100 hover:shadow-sm ${isCollapsed ? 'justify-center px-0 p-2' : 'gap-3 px-3 py-2'}`}
+                    >
+                        <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-sm font-bold text-brand-600 overflow-hidden shrink-0 border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
                             {user?.photo_base64 ? <img src={user.photo_base64} alt="Avatar" className="w-full h-full object-cover" /> : user?.full_name?.charAt(0)?.toUpperCase()}
                         </div>
                         {!isCollapsed && (
                             <div className="flex-1 min-w-0 animate-in fade-in duration-300">
-                                <p className="text-sm font-bold text-slate-800 truncate leading-none mb-1">{user?.full_name}</p>
+                                <p className="text-sm font-bold text-slate-800 truncate leading-none mb-1 group-hover:text-brand-600 transition-colors">{user?.full_name}</p>
                                 <p className="text-[11px] font-medium text-slate-400 truncate uppercase tracking-wider">{user?.email}</p>
                             </div>
                         )}
                     </div>
-                    <button
-                        onClick={() => { navigate('/perfil'); setSidebarOpen(false) }}
-                        title={isCollapsed ? "Meu Perfil" : ""}
-                        className={`flex items-center w-full text-[13px] font-semibold text-slate-500 hover:text-brand-600 hover:bg-white rounded-xl transition-all mb-1 border border-transparent hover:border-brand-100 hover:shadow-sm ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
-                    >
-                        <UserIcon className="w-4 h-4 shrink-0" />
-                        {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">Meu Perfil</span>}
-                    </button>
                     <button
                         onClick={handleLogout}
                         title={isCollapsed ? "Sair" : ""}

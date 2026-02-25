@@ -17,6 +17,7 @@ import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
 import type { CartItem } from '../components/RomaneioExportModal'
 import { isIntegerUnit } from '../utils/units'
+import ClientModal from '../components/ClientModal'
 
 interface Product {
     id: number
@@ -68,6 +69,7 @@ export default function RomaneioPage() {
     const [dropdownClients, setDropdownClients] = useState<ClientResult[]>([])
     const [isSearchingClient, setIsSearchingClient] = useState(false)
     const [showClientDropdown, setShowClientDropdown] = useState(false)
+    const [clientModalOpen, setClientModalOpen] = useState(false)
 
     const [movements, setMovements] = useState<any[]>([])
     const [stockLevels, setStockLevels] = useState<StockLevel[]>([])
@@ -421,15 +423,24 @@ export default function RomaneioPage() {
                             <div className="mb-4 relative">
                                 <div className="flex justify-between items-end mb-1.5 ml-1">
                                     <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cliente / Destino</label>
-                                    <button
-                                        onClick={() => {
-                                            setCustomerName('ROMANEIO/CONSUMIDOR')
-                                            setShowClientDropdown(false)
-                                        }}
-                                        className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md hover:bg-blue-100 transition-colors uppercase tracking-wider"
-                                    >
-                                        + Consumidor Rápido
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setCustomerName('ROMANEIO/CONSUMIDOR')
+                                                setShowClientDropdown(false)
+                                            }}
+                                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md hover:bg-blue-100 transition-colors uppercase tracking-wider"
+                                        >
+                                            + Consumidor Rápido
+                                        </button>
+                                        <button
+                                            onClick={() => setClientModalOpen(true)}
+                                            className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition-colors uppercase tracking-wider"
+                                            title="Cadastrar novo cliente agora"
+                                        >
+                                            + Novo Cliente
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="relative">
                                     <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
@@ -914,19 +925,21 @@ export default function RomaneioPage() {
                 />
             )}
 
+            {/* Modal de Cadastro Rápido de Cliente */}
+            <ClientModal
+                isOpen={clientModalOpen}
+                onClose={() => setClientModalOpen(false)}
+                onSuccess={(newClient) => {
+                    const docInfo = newClient.document ? ` - CPF/CNPJ: ${newClient.document}` : ''
+                    setCustomerName(`${newClient.name}${docInfo}`)
+                }}
+            />
+
             {/* Camera Scanner */}
             {cameraOpen && (
                 <BarcodeScanner
                     onScan={handleBarcodeScan}
                     onClose={() => setCameraOpen(false)}
-                />
-            )}
-
-            {showExportModal && (
-                <RomaneioExportModal
-                    customerName={customerName}
-                    items={cartItems}
-                    onClose={resetCart}
                 />
             )}
         </div>
