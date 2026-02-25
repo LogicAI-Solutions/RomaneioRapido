@@ -681,7 +681,7 @@ export default function RomaneioPage() {
                                                 ) : (
                                                     <div className="flex flex-col">
                                                         <span className="font-medium text-gray-800">
-                                                            {g.product_name_snapshot || g.product?.name || 'Produto Excluído'}
+                                                            {g.product_name || 'Produto Excluído'}
                                                         </span>
                                                         {g.notes && <span className="text-[10px] text-gray-400 italic">{g.notes}</span>}
                                                     </div>
@@ -720,7 +720,7 @@ export default function RomaneioPage() {
                                                                         onClick={() => {
                                                                             const itemsForExport = g.items.map((m: any) => ({
                                                                                 id: m.product_id,
-                                                                                name: m.product_name_snapshot || m.product?.name || 'Produto Excluído',
+                                                                                name: m.product_name || 'Produto Excluído',
                                                                                 barcode: m.product_barcode_snapshot || m.product?.barcode || null,
                                                                                 quantity: m.quantity,
                                                                                 unit: m.unit_snapshot || m.product?.unit || 'un',
@@ -756,7 +756,7 @@ export default function RomaneioPage() {
                                                                                             })
                                                                                         }
                                                                                     } catch {
-                                                                                        toast.error(`Produto "${historicItem.product_name_snapshot || 'Desconhecido'}" não encontrado.`)
+                                                                                        toast.error(`Produto "${historicItem.product_name || 'Desconhecido'}" não encontrado.`)
                                                                                     }
                                                                                 }
                                                                                 setCartItems(newCart)

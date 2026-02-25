@@ -76,6 +76,7 @@ def delete_product(db: Session, product_id: int):
     db_product = db.query(Product).filter(Product.id == product_id).first()
     if not db_product:
         return None
-    db.delete(db_product)
+    db_product.is_active = False
     db.commit()
+    db.refresh(db_product)
     return db_product

@@ -1,19 +1,35 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from backend.models.inventory import InventoryMovement, MovementType
 from backend.models.products import Product
 from backend.schemas.inventory import InventoryMovementCreate
 
 
 def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int = None):
+    # Buscar o produto para atualizar o estoque e preencher snapshots
+    product = db.query(Product).filter(Product.id == movement.product_id).first()
+    
+    movement_data = movement.model_dump()
+    
+    # Preenchimento automático de snapshots se não forem fornecidos
+    if product:
+        snapshot_map = {
+            "product_name_snapshot": "name",
+            "product_barcode_snapshot": "barcode", 
+            "unit_price_snapshot": "price",
+            "unit_snapshot": "unit"
+        }
+        for snap_field, prod_field in snapshot_map.items():
+            if not movement_data.get(snap_field):
+                movement_data[snap_field] = getattr(product, prod_field)
+
     # Criar o registro de movimentação
     db_movement = InventoryMovement(
-        **movement.model_dump(),
+        **movement_data,
         created_by=user_id
     )
     db.add(db_movement)
 
     # Atualizar o estoque do produto
-    product = db.query(Product).filter(Product.id == movement.product_id).first()
     if product:
         if movement.movement_type == MovementType.IN:
             product.stock_quantity += movement.quantity
@@ -28,7 +44,7 @@ def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int
 
 
 def get_movements(db: Session, product_id: int = None, skip: int = 0, limit: int = 100):
-    query = db.query(InventoryMovement)
+    query = db.query(InventoryMovement).options(joinedload(InventoryMovement.product))
     if product_id:
         query = query.filter(InventoryMovement.product_id == product_id)
     return query.order_by(InventoryMovement.created_at.desc()).offset(skip).limit(limit).all()

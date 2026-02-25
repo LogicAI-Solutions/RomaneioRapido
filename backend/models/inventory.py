@@ -32,7 +32,6 @@ class InventoryMovement(Base):
 
     @property
     def product_name(self):
-        # Prefer snapshot if available, fallback to relationship
-        if self.product_name_snapshot:
+        if self.product_name_snapshot and self.product_name_snapshot.strip():
             return self.product_name_snapshot
         return self.product.name if self.product else "Produto Excluído"
