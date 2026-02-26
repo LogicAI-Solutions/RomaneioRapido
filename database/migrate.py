@@ -118,12 +118,14 @@ def run_migrations():
     from backend.models.products import Product
     from backend.models.categories import Category
     from backend.models.inventory import InventoryMovement
+    from backend.models.clients import Client
     
     models = [
         User,
         Category,
         Product,
         InventoryMovement,
+        Client,
     ]
     
     for model in models:
