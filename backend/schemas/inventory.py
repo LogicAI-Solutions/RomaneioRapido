@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 from backend.models.inventory import MovementType
@@ -26,8 +26,7 @@ class InventoryMovementResponse(InventoryMovementBase):
     created_at: Optional[datetime] = None
     product_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StockLevel(BaseModel):
@@ -40,5 +39,4 @@ class StockLevel(BaseModel):
     price: float = 0.0
     is_low_stock: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,5 +1,9 @@
 import os
 import time
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, message="'crypt' is deprecated")
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
