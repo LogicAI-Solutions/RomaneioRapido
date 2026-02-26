@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { Plus, Boxes, ArrowRightLeft, AlertTriangle, Search, Pencil, Image as ImageIcon } from 'lucide-react'
 
@@ -22,6 +23,7 @@ interface Product {
 
 export default function DashboardPage() {
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [stats, setStats] = useState<Stats>({ totalProducts: 0, todayMovements: 0, lowStockCount: 0 })
     const [allProducts, setAllProducts] = useState<Product[]>([])
     const [searchQuery, setSearchQuery] = useState('')
@@ -116,15 +118,16 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard</h1>
-                    <p className="text-sm font-semibold text-slate-400">Bem-vindo de volta! Aqui está um resumo do seu estoque.</p>
+                    <p className="text-sm font-semibold text-slate-400">
+                        Bem-vindo de volta, <span className="text-brand-600">{user?.full_name.split(' ')[0]}</span>! Aqui está um resumo do seu estoque.
+                    </p>
                 </div>
-                <button
-                    onClick={() => navigate('/produtos')}
-                    className="h-12 px-6 font-bold bg-brand-600 text-white rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group active:scale-95"
-                >
-                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                    <span>Cadastrar Produto</span>
-                </button>
+                <div className="hidden sm:flex flex-col items-end">
+                    <p className="text-xs font-black text-brand-600 uppercase tracking-[0.2em]">Visão Geral</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                        {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date())}
+                    </p>
+                </div>
             </div>
 
             {/* 3 Main Cards */}
@@ -167,6 +170,51 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Alertas de Estoque</p>
                 </div>
+            </div>
+
+            {/* Ações Rápidas */}
+            <div className="flex flex-wrap gap-4">
+                <button
+                    onClick={() => navigate('/romaneio')}
+                    className="flex-1 min-w-[200px] h-20 bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-brand-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                >
+                    <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-brand-500/5 rounded-full blur-xl group-hover:bg-brand-500/10 transition-colors" />
+                    <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all shrink-0">
+                        <ArrowRightLeft className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                        <p className="text-sm font-black text-slate-900 leading-tight">Montar Romaneio</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Saída Rápida</p>
+                    </div>
+                </button>
+
+                <button
+                    onClick={() => navigate('/clientes')}
+                    className="flex-1 min-w-[200px] h-20 bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-emerald-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                >
+                    <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
+                        <Plus className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                        <p className="text-sm font-black text-slate-900 leading-tight">Novo Cliente</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cadastro Ágil</p>
+                    </div>
+                </button>
+
+                <button
+                    onClick={() => navigate('/produtos')}
+                    className="flex-1 min-w-[200px] h-20 bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-blue-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                >
+                    <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors" />
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                        <Boxes className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                        <p className="text-sm font-black text-slate-900 leading-tight">Produtos</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gerenciar Estoque</p>
+                    </div>
+                </button>
             </div>
 
             {/* Products Table Area */}

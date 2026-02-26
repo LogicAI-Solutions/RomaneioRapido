@@ -9,7 +9,6 @@ import {
     LogOut,
     Menu,
     X,
-    User as UserIcon,
     Users,
     ChevronLeft,
     ChevronRight
@@ -18,10 +17,10 @@ import { useState } from 'react'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
     { to: '/produtos', label: 'Produtos', icon: Boxes },
     { to: '/categorias', label: 'Categorias', icon: Tags },
     { to: '/clientes', label: 'Clientes', icon: Users },
-    { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
 ]
 
 export default function AppLayout() {
