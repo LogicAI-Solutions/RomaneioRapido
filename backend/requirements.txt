@@ -14,3 +14,4 @@ httpx
 portalocker
 slowapi
 Pillow
+email-validator

@@ -11,6 +11,8 @@ import ProfilePage from './pages/ProfilePage'
 import ClientsPage from './pages/ClientsPage'
 import AppLayout from './components/AppLayout'
 import { Toaster } from 'react-hot-toast'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -51,6 +53,16 @@ function AppRoutes() {
         </PublicRoute>
       } />
       <Route path="/cadastro" element={<Navigate to="/login" replace />} />
+      <Route path="/forgot-password" element={
+        <PublicRoute>
+          <ForgotPasswordPage />
+        </PublicRoute>
+      } />
+      <Route path="/reset-password" element={
+        <PublicRoute>
+          <ResetPasswordPage />
+        </PublicRoute>
+      } />
 
       {/* Rotas protegidas com layout */}
       <Route element={

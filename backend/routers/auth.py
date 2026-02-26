@@ -6,7 +6,7 @@ from backend.core.security import verify_password, create_access_token, get_curr
 from backend.core.config import settings
 from backend.core.limiter import limiter
 from backend.crud.users import get_user_by_email
-from backend.schemas.auth import Token, LoginRequest, UserResponse, UserUpdate
+from backend.schemas.auth import Token, LoginRequest, UserResponse, UserUpdate, ForgotPasswordRequest, ResetPasswordRequest
 from backend.models.users import User
 from backend.config.logger import get_dynamic_logger
 
@@ -80,4 +80,55 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
     except Exception as e:
         logger.error(f"Erro ao atualizar usuário: {e}")
         db.rollback()
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    try:
+        user = get_user_by_email(db, data.email)
+        if user:
+            import uuid
+            from datetime import datetime, timedelta
+            from backend.core.mail_utils import send_reset_password_email
+            
+            token = str(uuid.uuid4())
+            user.reset_token = token
+            user.reset_token_expires = datetime.now() + timedelta(hours=1)
+            db.commit()
+            
+            send_reset_password_email(user.email, token)
+            
+        # Mesmo que o usuário não exista, retornamos sucesso por segurança (impedir enumeração)
+        return {"message": "Se o e-mail existir em nossa base, um link de recuperação será enviado."}
+    except Exception as e:
+        logger.error(f"Erro no forgot-password para {data.email}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+def reset_password(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    try:
+        from datetime import datetime
+        user = db.query(User).filter(
+            User.reset_token == data.token,
+            User.reset_token_expires > datetime.now()
+        ).first()
+        
+        if not user:
+            raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+            
+        user.hashed_password = get_password_hash(data.new_password)
+        user.reset_token = None
+        user.reset_token_expires = None
+        db.commit()
+        
+        logger.info(f"Senha redefinida com sucesso para o usuário {user.email}")
+        return {"message": "Senha redefinida com sucesso"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no reset-password: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

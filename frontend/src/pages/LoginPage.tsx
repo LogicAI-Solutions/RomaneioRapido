@@ -9,16 +9,16 @@ import api from '../services/api'
 export default function LoginPage() {
     const { login } = useAuth()
     const navigate = useNavigate()
-    
+
     // Estados Compartilhados
     const [isLoading, setIsLoading] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
-    
+
     // Estado de Alternância (Login vs Cadastro)
     const [isRegistering, setIsRegistering] = useState(false)
-    
+
     // Estados Exclusivos de Cadastro
     const [fullName, setFullName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
@@ -41,9 +41,9 @@ export default function LoginPage() {
                     email: email,
                     password: password
                 })
-                
+
                 toast.success('Conta criada com sucesso!')
-                
+
                 // Login automático após cadastro
                 await login(email, password)
                 navigate('/dashboard')
@@ -69,7 +69,7 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50/30 font-sans selection:bg-brand-500/30">
             {isLoading && <LoadingOverlay message={isRegistering ? "Criando sua conta..." : "Autenticando..."} />}
-            
+
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
             <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-between p-20 overflow-hidden">
                 {/* Decorative background elements */}
@@ -146,8 +146,8 @@ export default function LoginPage() {
                                 {isRegistering ? 'Crie sua conta.' : 'Bem-vindo.'}
                             </h2>
                             <p className="text-slate-500 font-semibold italic text-sm">
-                                {isRegistering 
-                                    ? 'Cadastre-se para começar a gerenciar seu estoque.' 
+                                {isRegistering
+                                    ? 'Cadastre-se para começar a gerenciar seu estoque.'
                                     : 'Insira suas credenciais para acessar a plataforma.'}
                             </p>
                         </div>
@@ -193,7 +193,15 @@ export default function LoginPage() {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
-                                    {!isRegistering && <button type="button" className="text-[11px] font-black text-brand-600 hover:text-brand-700 tracking-tight">Esqueceu a senha?</button>}
+                                    {!isRegistering && (
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/forgot-password')}
+                                            className="text-[11px] font-black text-brand-600 hover:text-brand-700 tracking-tight"
+                                        >
+                                            Esqueceu a senha?
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -255,7 +263,7 @@ export default function LoginPage() {
                         <div className="mt-16 text-center">
                             <p className="text-xs text-slate-400 font-bold tracking-tight">
                                 {isRegistering ? 'Já tem uma conta?' : 'Não tem uma conta ainda?'}
-                                <button 
+                                <button
                                     onClick={toggleMode}
                                     className="text-brand-600 font-black hover:underline px-1 ml-1"
                                 >
