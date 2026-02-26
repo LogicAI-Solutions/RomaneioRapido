@@ -14,9 +14,9 @@ import {
     Shield,
     Zap,
     Globe,
-    ChevronRight,
     Star,
-    Check
+    Check,
+    AlertTriangle
 } from 'lucide-react'
 import { PLANS } from '../constants/plans'
 
@@ -50,7 +50,7 @@ export default function LandingPage() {
                             Login
                         </button>
                         <button
-                            onClick={() => navigate('/cadastro')}
+                            onClick={() => navigate('/login')}
                             className="h-9 px-5 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             Experimentar
@@ -71,7 +71,7 @@ export default function LandingPage() {
                         </nav>
                         <div className="flex gap-3 pt-2">
                             <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-medium border border-gray-200 rounded-lg text-gray-700">Login</button>
-                            <button onClick={() => navigate('/cadastro')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg">Experimentar</button>
+                            <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg">Experimentar</button>
                         </div>
                     </div>
                 )}
@@ -128,66 +128,64 @@ export default function LandingPage() {
                                 </div>
                             </div>
 
-                            {/* Mockup Visual */}
-                            <div className="relative">
-                                <div className="absolute -inset-4 bg-gradient-to-br from-blue-50 to-brand-50 rounded-3xl -z-10"></div>
-                                <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl overflow-hidden">
-                                    {/* Mini header */}
-                                    <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                                        <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-                                            <Package className="w-3 h-3 text-white" />
-                                        </div>
-                                        <span className="text-xs font-semibold text-gray-700">Dashboard</span>
-                                        <div className="ml-auto flex gap-1">
-                                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 space-y-3 bg-gray-50/50">
-                                        {/* Stats */}
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {[
-                                                { label: 'Produtos', value: '1.247', icon: Boxes, accent: 'text-blue-600 bg-blue-50' },
-                                                { label: 'Hoje', value: '+38', icon: Truck, accent: 'text-emerald-600 bg-emerald-50' },
-                                                { label: 'Alertas', value: '5', icon: BarChart3, accent: 'text-amber-600 bg-amber-50' },
-                                            ].map((s, i) => (
-                                                <div key={i} className="bg-white rounded-xl p-3 border border-gray-100">
-                                                    <div className={`w-7 h-7 rounded-lg ${s.accent} flex items-center justify-center mb-2`}>
-                                                        <s.icon className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <p className="text-lg font-bold text-gray-900">{s.value}</p>
-                                                    <p className="text-[10px] text-gray-400 font-medium">{s.label}</p>
+                            {/* Mockup Visual - Mais Premium */}
+                            <div className="relative group">
+                                <div className="absolute -inset-10 bg-blue-500/10 rounded-full blur-[120px] -z-10 group-hover:bg-blue-500/20 transition-all duration-700"></div>
+                                <div className="bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border border-slate-800 transform group-hover:rotate-1 group-hover:scale-[1.02] transition-all duration-700">
+                                    <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
+                                        {/* Interface Header */}
+                                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                                    <Package className="w-5 h-5 text-white" />
                                                 </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Mini Table */}
-                                        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                                            <div className="grid grid-cols-4 gap-2 px-3 py-2 bg-gray-50 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                                                <span>Produto</span>
-                                                <span>SKU</span>
-                                                <span>Qtd</span>
-                                                <span>Status</span>
+                                                <div>
+                                                    <span className="text-sm font-black text-gray-900 block leading-tight">Painel Principal</span>
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Romaneio v2.4</span>
+                                                </div>
                                             </div>
-                                            {[
-                                                { name: 'Action Hero Pro', sku: 'BRQ-001', qty: '45', s: 'ok' },
-                                                { name: 'Quebra-Cabeça 500', sku: 'BRQ-042', qty: '8', s: 'low' },
-                                                { name: 'Jogo Tabuleiro X', sku: 'JGS-019', qty: '120', s: 'ok' },
-                                                { name: 'RC Drift Car', sku: 'BRQ-087', qty: '3', s: 'crit' },
-                                            ].map((r, i) => (
-                                                <div key={i} className="grid grid-cols-4 gap-2 px-3 py-2 border-t border-gray-50 text-xs">
-                                                    <span className="font-medium text-gray-800 truncate">{r.name}</span>
-                                                    <span className="text-gray-400 font-mono text-[10px]">{r.sku}</span>
-                                                    <span className="font-semibold text-gray-600">{r.qty}</span>
-                                                    <span>
-                                                        {r.s === 'ok' && <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-semibold">OK</span>}
-                                                        {r.s === 'low' && <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-semibold">Baixo</span>}
-                                                        {r.s === 'crit' && <span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-[10px] font-semibold">Crítico</span>}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                            <div className="flex gap-1.5">
+                                                {[1, 2, 3].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-gray-200"></div>)}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 space-y-6">
+                                            {/* Stats Premium */}
+                                            <div className="grid grid-cols-3 gap-4">
+                                                {[
+                                                    { label: 'Estoque', value: '1.2k', icon: Boxes, color: 'text-blue-600' },
+                                                    { label: 'Hoje', value: '+42', icon: Truck, color: 'text-emerald-600' },
+                                                    { label: 'Alertas', value: '3', icon: AlertTriangle, color: 'text-orange-500' },
+                                                ].map((s, i) => (
+                                                    <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-transparent hover:border-gray-200 transition-all cursor-default">
+                                                        <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
+                                                        <p className="text-xl font-black text-gray-900 leading-tight">{s.value}</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Carrinho Mockup */}
+                                            <div className="space-y-3">
+                                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em] ml-1">Último Romaneio</p>
+                                                {[
+                                                    { n: 'Cabo USB-C Premium', q: '50un', p: 'R$ 890,00', s: 'ok' },
+                                                    { n: 'Adaptador HDMI 4K', q: '12un', p: 'R$ 420,00', s: 'low' },
+                                                ].map((r, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-blue-200 transition-all">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                                                                <Package className="w-5 h-5 text-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-gray-900">{r.n}</p>
+                                                                <p className="text-[10px] font-bold text-gray-400">{r.q}</p>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm font-black text-blue-600">{r.p}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -196,85 +194,87 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* Solução - Alternating Rows */}
-                <section id="solucao" className="py-20 bg-gray-50/60">
+                {/* Solução - Features Reais */}
+                <section id="solucao" className="py-24 bg-gray-50/60 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
                     <div className="max-w-6xl mx-auto px-5">
-                        <div className="text-center mb-16">
-                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-3">Por que RomaneioRapido?</p>
-                            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
-                                Um sistema feito pra quem <span className="text-blue-600">não tem tempo a perder</span>
-                            </h2>
+                        <div className="text-center mb-20">
+                            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">A Experiência RomaneioRapido</h2>
+                            <h3 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+                                Tudo o que você precisa para <span className="text-blue-600">vender mais rápido</span>
+                            </h3>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="grid md:grid-cols-2 gap-8">
                             {[
                                 {
                                     icon: ScanBarcode,
-                                    title: 'Leitura de Código de Barras',
-                                    desc: 'Dê entrada e saída em produtos com um simples bip. Conecte qualquer leitor USB e pronto — sem configuração.',
-                                    tag: 'Agilidade'
+                                    title: 'Bipou, Vendeu.',
+                                    desc: 'Suporte nativo para leitores de código de barras USB e Câmera. Agilidade extrema na hora de montar seus pedidos de saída.',
+                                    accent: 'bg-blue-50 text-blue-600'
+                                },
+                                {
+                                    icon: ClipboardList,
+                                    title: 'Romaneio Inteligente',
+                                    desc: 'Gere romaneios profissionais em segundos. Exporte para WhatsApp ou PDF e mantenha seus clientes informados com um clique.',
+                                    accent: 'bg-emerald-50 text-emerald-600'
                                 },
                                 {
                                     icon: Boxes,
-                                    title: 'Estoque em Tempo Real',
-                                    desc: 'Veja a quantidade exata de cada produto, receba alertas de estoque baixo e nunca mais perca uma venda por falta de produto.',
-                                    tag: 'Controle'
+                                    title: 'Histórico Imutável',
+                                    desc: 'Nossa tecnologia de "Snapshots" garante que seu histórico de vendas não mude, mesmo se você alterar o nome ou preço do produto depois.',
+                                    accent: 'bg-indigo-50 text-indigo-600'
                                 },
                                 {
                                     icon: BarChart3,
-                                    title: 'Visão Completa do Negócio',
-                                    desc: 'Dashboards visuais que mostram movimentações, tendências e saúde do estoque em uma interface limpa como planilha.',
-                                    tag: 'Inteligência'
+                                    title: 'Gestão de Estoque Vivo',
+                                    desc: 'Alertas automáticos de estoque baixo e visão clara de entradas e saídas. Controle total para nunca deixar faltar mercadoria.',
+                                    accent: 'bg-amber-50 text-amber-600'
                                 },
                             ].map((item, i) => (
                                 <div
                                     key={i}
-                                    className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 flex flex-col md:flex-row items-start gap-5 hover:shadow-lg hover:border-gray-200 transition-all duration-300 group"
+                                    className="bg-white rounded-[2.5rem] border border-gray-100 p-8 md:p-10 hover:shadow-2xl hover:shadow-blue-600/5 hover:-translate-y-1 transition-all duration-500 group"
                                 >
-                                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                                        <item.icon className="w-6 h-6" />
+                                    <div className={`w-16 h-16 rounded-3xl ${item.accent} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500`}>
+                                        <item.icon className="w-8 h-8" />
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
-                                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{item.tag}</span>
-                                        </div>
-                                        <p className="text-gray-500 leading-relaxed text-[15px]">{item.desc}</p>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors hidden md:block mt-1" />
+                                    <h4 className="text-2xl font-black text-gray-900 mb-4">{item.title}</h4>
+                                    <p className="text-gray-500 leading-relaxed text-lg">{item.desc}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* Recursos - Compact Grid */}
-                <section id="recursos" className="py-20 bg-white">
+                {/* Recursos - Grid Moderno */}
+                <section id="recursos" className="py-24 bg-white relative overflow-hidden">
                     <div className="max-w-6xl mx-auto px-5">
-                        <div className="text-center mb-14">
-                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-3">Recursos</p>
-                            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">Tudo incluso, sem surpresas</h2>
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Potência total em cada detalhe</h2>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                             {[
-                                { icon: ScanBarcode, title: 'Código de Barras', desc: 'Leitor USB integrado' },
-                                { icon: ClipboardList, title: 'Cadastro Rápido', desc: 'Produtos em segundos' },
-                                { icon: Truck, title: 'Movimentações', desc: 'Entrada e saída fácil' },
-                                { icon: BarChart3, title: 'Relatórios', desc: 'Dados visuais e claros' },
-                                { icon: Shield, title: 'Segurança', desc: 'Dados criptografados' },
-                                { icon: Globe, title: 'Acesso Web', desc: 'Qualquer dispositivo' },
-                                { icon: Zap, title: 'Performance', desc: 'Interface ultra-rápida' },
-                                { icon: Boxes, title: 'Categorias', desc: 'Organize por setor' },
-                                { icon: Star, title: 'Suporte', desc: 'Atendimento dedicado' },
+                                { icon: ScanBarcode, title: 'BIP USB & Câmera', desc: 'Compatível com qualquer leitor' },
+                                { icon: ClipboardList, title: 'Cadastro Inteligente', desc: 'Fichas técnicas completas' },
+                                { icon: Truck, title: 'Movimentação Ágil', desc: 'Entradas e saídas sem fricção' },
+                                { icon: BarChart3, title: 'Dashboard Premium', desc: 'Dados visuais de alta carga' },
+                                { icon: Shield, title: 'Snapshots Imutáveis', desc: 'Segurança total no histórico' },
+                                { icon: Globe, title: 'Acesso Nuvem', desc: 'Sincronização em tempo real' },
+                                { icon: Zap, title: 'Performance 60FPS', desc: 'Interface fluida e responsiva' },
+                                { icon: Boxes, title: 'Multi-Categorias', desc: 'Organização estruturada' },
+                                { icon: Star, title: 'UX de Elite', desc: 'Focado na experiência do usuário' },
                             ].map((r, i) => (
                                 <div
                                     key={i}
-                                    className="p-5 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-200 group"
+                                    className="p-6 rounded-3xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/20 transition-all duration-300 group"
                                 >
-                                    <r.icon className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors mb-3" />
-                                    <h4 className="text-sm font-bold text-gray-900 mb-0.5">{r.title}</h4>
-                                    <p className="text-xs text-gray-400">{r.desc}</p>
+                                    <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center mb-4 transition-all duration-300">
+                                        <r.icon className="w-5 h-5" />
+                                    </div>
+                                    <h4 className="text-sm font-black text-gray-900 mb-1">{r.title}</h4>
+                                    <p className="text-xs text-gray-400 font-medium leading-relaxed">{r.desc}</p>
                                 </div>
                             ))}
                         </div>
@@ -321,7 +321,7 @@ export default function LandingPage() {
                                     </div>
 
                                     <button
-                                        onClick={() => navigate('/cadastro')}
+                                        onClick={() => navigate('/login')}
                                         className={`w-full py-4 rounded-[10px] font-bold text-sm transition-all duration-200 mb-8 ${plan.highlight
                                             ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
                                             : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50'
@@ -347,26 +347,28 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* CTA */}
-                <section className="py-20 bg-white">
-                    <div className="max-w-3xl mx-auto px-5 text-center">
-                        <div className="bg-gray-900 rounded-3xl p-10 md:p-16 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
-                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-600/15 rounded-full blur-[60px] translate-y-1/3 -translate-x-1/3"></div>
+                {/* CTA - Premium Dark Section */}
+                <section className="py-24 bg-white">
+                    <div className="max-w-5xl mx-auto px-5">
+                        <div className="bg-slate-900 rounded-[3rem] p-12 md:p-20 relative overflow-hidden shadow-2xl shadow-blue-900/20">
+                            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-600/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+                            <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
 
-                            <div className="relative z-10">
-                                <h2 className="text-2xl md:text-4xl font-extrabold text-white mb-4 tracking-tight">
-                                    Comece a organizar seu estoque hoje
+                            <div className="relative z-10 text-center">
+                                <h2 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
+                                    Simplifique seu estoque <span className="text-blue-500">agora mesmo</span>
                                 </h2>
-                                <p className="text-gray-400 mb-8 max-w-md mx-auto text-sm md:text-base">
-                                    Simples, rápido e sem complicação. Seu inventário sob controle em minutos.
+                                <p className="text-slate-400 mb-10 max-w-lg mx-auto text-lg font-medium leading-relaxed">
+                                    Junte-se a centenas de empresas que já transformaram sua logística com o RomaneioRapido.
                                 </p>
-                                <button
-                                    onClick={() => navigate('/login')}
-                                    className="h-12 px-8 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/30 inline-flex items-center gap-2"
-                                >
-                                    Acessar o Sistema <ArrowRight className="w-4 h-4" />
-                                </button>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                    <button
+                                        onClick={() => navigate('/login')}
+                                        className="w-full sm:w-auto h-14 px-10 text-base font-black bg-blue-600 text-white rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/40 flex items-center justify-center gap-3 active:scale-95"
+                                    >
+                                        Começar Gratuitamente <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

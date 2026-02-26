@@ -4,7 +4,6 @@ import LoginPage from './pages/LoginPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import ProductsPage from './pages/ProductsPage'
-import SignupPage from './pages/SignupPage'
 import CategoriesPage from './pages/CategoriesPage'
 import CategoryProductsPage from './pages/CategoryProductsPage'
 import RomaneioPage from './pages/RomaneioPage'
@@ -51,11 +50,7 @@ function AppRoutes() {
           <LoginPage />
         </PublicRoute>
       } />
-      <Route path="/cadastro" element={
-        <PublicRoute>
-          <SignupPage />
-        </PublicRoute>
-      } />
+      <Route path="/cadastro" element={<Navigate to="/login" replace />} />
 
       {/* Rotas protegidas com layout */}
       <Route element={

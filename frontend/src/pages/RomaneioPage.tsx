@@ -185,7 +185,7 @@ export default function RomaneioPage() {
                 setIsSearchingClient(true)
                 try {
                     const res = await api.get('/clients/', { params: { search: customerName.trim(), limit: 5 } })
-                    setDropdownClients(res.data)
+                    setDropdownClients(res.data.items || [])
                 } catch {
                     setDropdownClients([])
                 } finally {
@@ -425,15 +425,6 @@ export default function RomaneioPage() {
                                     <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cliente / Destino</label>
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => {
-                                                setCustomerName('ROMANEIO/CONSUMIDOR')
-                                                setShowClientDropdown(false)
-                                            }}
-                                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md hover:bg-blue-100 transition-colors uppercase tracking-wider"
-                                        >
-                                            + Consumidor Rápido
-                                        </button>
-                                        <button
                                             onClick={() => setClientModalOpen(true)}
                                             className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition-colors uppercase tracking-wider"
                                             title="Cadastrar novo cliente agora"
@@ -446,7 +437,7 @@ export default function RomaneioPage() {
                                     <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                                     <input
                                         type="text"
-                                        placeholder="Busque cliente ou insira um nome livre..."
+                                        placeholder="Digite o nome do cliente para buscar..."
                                         value={customerName}
                                         onChange={(e) => {
                                             setCustomerName(e.target.value)

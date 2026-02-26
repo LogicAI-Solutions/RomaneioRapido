@@ -2,35 +2,74 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import LoadingOverlay from '../components/LoadingOverlay'
-import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode } from 'lucide-react'
+import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import api from '../services/api'
 
 export default function LoginPage() {
     const { login } = useAuth()
     const navigate = useNavigate()
+    
+    // Estados Compartilhados
+    const [isLoading, setIsLoading] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
-    const [error, setError] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
+    
+    // Estado de Alternância (Login vs Cadastro)
+    const [isRegistering, setIsRegistering] = useState(false)
+    
+    // Estados Exclusivos de Cadastro
+    const [fullName, setFullName] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
-        setError('')
         setIsLoading(true)
 
         try {
-            await login(email, password)
-            navigate('/dashboard')
-        } catch {
-            setError('Email ou senha incorretos')
+            if (isRegistering) {
+                // Fluxo de Cadastro
+                if (password !== confirmPassword) {
+                    toast.error('As senhas não coincidem.')
+                    setIsLoading(false)
+                    return
+                }
+
+                await api.post('/users/', {
+                    full_name: fullName,
+                    email: email,
+                    password: password
+                })
+                
+                toast.success('Conta criada com sucesso!')
+                
+                // Login automático após cadastro
+                await login(email, password)
+                navigate('/dashboard')
+            } else {
+                // Fluxo de Login
+                await login(email, password)
+                navigate('/dashboard')
+            }
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.detail || (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.')
+            toast.error(errorMessage)
         } finally {
             setIsLoading(false)
         }
     }
 
+    const toggleMode = () => {
+        setIsRegistering(!isRegistering)
+        setFullName('')
+        setConfirmPassword('')
+    }
+
     return (
         <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50/30 font-sans selection:bg-brand-500/30">
-            {isLoading && <LoadingOverlay message="Autenticando..." />}
+            {isLoading && <LoadingOverlay message={isRegistering ? "Criando sua conta..." : "Autenticando..."} />}
+            
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
             <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-between p-20 overflow-hidden">
                 {/* Decorative background elements */}
@@ -85,7 +124,7 @@ export default function LoginPage() {
             </div>
 
             {/* Seção Direita - Formulário */}
-            <div className="flex-1 flex flex-col bg-white">
+            <div className="flex-1 flex flex-col bg-white overflow-y-auto">
                 {/* Mobile Header (Apenas em Mobile) */}
                 <div className="lg:hidden p-6 flex items-center justify-between border-b border-slate-100">
                     <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
@@ -103,37 +142,70 @@ export default function LoginPage() {
                     <div className="w-full max-w-sm animate-slide-up">
                         {/* Boas vindas */}
                         <div className="mb-12 text-center lg:text-left">
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-3">Bem-vindo.</h2>
-                            <p className="text-slate-500 font-semibold italic text-sm">Insira suas credenciais para acessar a plataforma.</p>
+                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-3">
+                                {isRegistering ? 'Crie sua conta.' : 'Bem-vindo.'}
+                            </h2>
+                            <p className="text-slate-500 font-semibold italic text-sm">
+                                {isRegistering 
+                                    ? 'Cadastre-se para começar a gerenciar seu estoque.' 
+                                    : 'Insira suas credenciais para acessar a plataforma.'}
+                            </p>
                         </div>
 
                         {/* Formulário */}
-                        <form onSubmit={handleSubmit} className="space-y-8">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {isRegistering && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                            <User className="h-4 w-4 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={fullName}
+                                            onChange={(e) => setFullName(e.target.value)}
+                                            placeholder="João da Silva"
+                                            required
+                                            className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="exemplo@email.com"
-                                    required
-                                    className="w-full h-14 px-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
-                                />
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                        <Mail className="h-4 w-4 text-slate-400" />
+                                    </div>
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="exemplo@email.com"
+                                        required
+                                        className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
-                                    <button type="button" className="text-[11px] font-black text-brand-600 hover:text-brand-700 tracking-tight">Esqueceu a senha?</button>
+                                    {!isRegistering && <button type="button" className="text-[11px] font-black text-brand-600 hover:text-brand-700 tracking-tight">Esqueceu a senha?</button>}
                                 </div>
                                 <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                        <Lock className="h-4 w-4 text-slate-400" />
+                                    </div>
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••••••"
                                         required
-                                        className="w-full h-14 px-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm pr-14 shadow-sm"
+                                        className="w-full h-14 pl-12 pr-14 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
                                     />
                                     <button
                                         type="button"
@@ -145,10 +217,22 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-                            {error && (
-                                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm shadow-red-500/5">
-                                    <div className="w-1 h-8 bg-red-500 rounded-full" />
-                                    <p className="text-xs text-red-600 font-black uppercase tracking-tight">{error}</p>
+                            {isRegistering && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirme a Senha</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                            <Lock className="h-4 w-4 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="••••••••••••"
+                                            required
+                                            className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                        />
+                                    </div>
                                 </div>
                             )}
 
@@ -160,17 +244,23 @@ export default function LoginPage() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="w-6 h-6 animate-spin" />
-                                        <span>Autenticando...</span>
+                                        <span>{isRegistering ? 'Criando Conta...' : 'Autenticando...'}</span>
                                     </>
                                 ) : (
-                                    'Entrar no Sistema'
+                                    isRegistering ? 'Criar Minha Conta' : 'Entrar no Sistema'
                                 )}
                             </button>
                         </form>
 
                         <div className="mt-16 text-center">
                             <p className="text-xs text-slate-400 font-bold tracking-tight">
-                                Não tem uma conta ainda? <button className="text-brand-600 font-black hover:underline px-1">Solicitar acesso ao Romaneio</button>
+                                {isRegistering ? 'Já tem uma conta?' : 'Não tem uma conta ainda?'}
+                                <button 
+                                    onClick={toggleMode}
+                                    className="text-brand-600 font-black hover:underline px-1 ml-1"
+                                >
+                                    {isRegistering ? 'Faça login' : 'Cadastre-se agora'}
+                                </button>
                             </p>
                         </div>
                     </div>
