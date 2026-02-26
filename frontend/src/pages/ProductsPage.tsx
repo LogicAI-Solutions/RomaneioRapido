@@ -295,6 +295,30 @@ export default function ProductsPage() {
         return { label: 'OK', class: 'bg-emerald-50 text-emerald-600' }
     }
 
+    const renderActionsMenu = (p: Product) => {
+        if (openMenuId !== p.id) return null
+
+        return (
+            <>
+                <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden">
+                    <button
+                        onClick={() => { openEdit(p); setOpenMenuId(null); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
+                    >
+                        <Pencil className="w-4 h-4" /> Editar Produto
+                    </button>
+                    <button
+                        onClick={() => { setDeleteConfirm(p.id); setOpenMenuId(null); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left border-t border-slate-50"
+                    >
+                        <Trash2 className="w-4 h-4" /> Excluir Registro
+                    </button>
+                </div>
+            </>
+        )
+    }
+
     return (
         <div>
             {/* Header */}
@@ -345,7 +369,7 @@ export default function ProductsPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-                    <div className="overflow-x-auto min-h-[400px]">
+                    <div className="overflow-x-auto min-h-[400px] pb-32">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50/80 border-b border-gray-100">
@@ -444,30 +468,12 @@ export default function ProductsPage() {
                                                             e.stopPropagation();
                                                             setOpenMenuId(openMenuId === p.id ? null : p.id);
                                                         }}
-                                                        className={`p-2 rounded-full transition-all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                        className={`p-2.5 rounded-xl transition-all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
                                                     >
-                                                        <MoreVertical className="w-4 h-4" />
+                                                        <MoreVertical className="w-5 h-5" />
                                                     </button>
 
-                                                    {openMenuId === p.id && (
-                                                        <>
-                                                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                            <div className="absolute right-0 top-10 w-36 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                                                                <button
-                                                                    onClick={() => { openEdit(p); setOpenMenuId(null); }}
-                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
-                                                                >
-                                                                    <Pencil className="w-4 h-4" /> Editar
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => { setDeleteConfirm(p.id); setOpenMenuId(null); }}
-                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" /> Excluir
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    )}
+                                                    {renderActionsMenu(p)}
                                                 </div>
                                             </td>
                                         </tr>

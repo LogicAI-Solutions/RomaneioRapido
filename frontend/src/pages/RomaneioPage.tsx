@@ -11,13 +11,15 @@ import {
     CheckCircle2,
     UserCircle2,
     Smartphone,
-    MoreVertical
+    MoreVertical,
+    Minus,
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
 import type { CartItem } from '../components/RomaneioExportModal'
 import { isIntegerUnit } from '../utils/units'
 import ClientModal from '../components/ClientModal'
+import MovementDetailsModal from '../components/MovementDetailsModal'
 
 interface Product {
     id: number
@@ -76,7 +78,16 @@ export default function RomaneioPage() {
 
     // Estado para Regerar Romaneio Histórico
     const [historicExport, setHistoricExport] = useState<{ customerName: string, items: CartItem[] } | null>(null)
+    const [viewMovement, setViewMovement] = useState<{ customerName: string, items: CartItem[] } | null>(null)
     const [openHistoryMenuId, setOpenHistoryMenuId] = useState<string | number | null>(null)
+
+    // Estado para Validação de Estoque
+    const [stockValidationError, setStockValidationError] = useState<{
+        productName: string,
+        available: number,
+        requested: number,
+        unit: string
+    }[] | null>(null)
 
     // Agrupamento de Movimentações para permitir Re-gerar Romaneios
     const groupedMovements = useMemo(() => {
@@ -97,12 +108,17 @@ export default function RomaneioPage() {
                         created_at: m.created_at,
                         customerName: cName,
                         items: [],
-                        type: m.movement_type
+                        type: m.movement_type,
+                        totalValue: 0
                     }
                 }
                 groups[m.romaneio_id].items.push(m)
+                groups[m.romaneio_id].totalValue += (m.quantity * (m.unit_price_snapshot || 0))
             } else {
-                singles.push(m)
+                singles.push({
+                    ...m,
+                    totalValue: (m.quantity * (m.unit_price_snapshot || 0))
+                })
             }
         })
 
@@ -113,7 +129,8 @@ export default function RomaneioPage() {
                 isGroup: false,
                 id: s.id,
                 items: [s], // Treat as a single-item group for actions
-                customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || "")
+                customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || ""),
+                totalValue: s.totalValue
             }))
         ]
 
@@ -148,6 +165,10 @@ export default function RomaneioPage() {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        fetchStockLevels()
+    }, [])
 
     useEffect(() => {
         if (activeTab === 'movimentacoes') fetchMovements()
@@ -314,14 +335,36 @@ export default function RomaneioPage() {
 
     const handleFinalizeRomaneio = async () => {
         if (cartItems.length === 0) return
-        setSubmitting(true)
 
+        // Validação de Estoque
+        const errors: any[] = []
+        cartItems.forEach(item => {
+            const stockItem = stockLevels.find(s => s.product_id === item.id)
+            if (stockItem && item.quantity > stockItem.stock_quantity) {
+                errors.push({
+                    productName: item.name,
+                    available: stockItem.stock_quantity,
+                    requested: item.quantity,
+                    unit: item.unit
+                })
+            }
+        })
+
+        if (errors.length > 0) {
+            setStockValidationError(errors)
+            return
+        }
+
+        executeFinalize()
+    }
+
+    const executeFinalize = async () => {
+        setSubmitting(true)
         try {
             // Gerar um ID de agrupamento para este Romaneio (Batch UUID)
             const romaneioBatchId = `ROM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
 
             // Envia cada item do carrinho como uma movimentação de SAÍDA individual
-            // Incluindo SNAPSHOTS dos dados para preservar o histórico caso o produto seja alterado/excluído
             for (const item of cartItems) {
                 await api.post('/inventory/movements', {
                     product_id: item.id,
@@ -339,6 +382,7 @@ export default function RomaneioPage() {
             // Exibe modal de exportação ao invés de limpar a tela direto
             setShowExportModal(true)
             toast.success('Romaneio registrado com sucesso!')
+            fetchStockLevels() // Atualiza estoque local
 
         } catch (err: any) {
             toast.error(err.response?.data?.detail || 'Erro ao registrar movimentações do romaneio!')
@@ -352,6 +396,88 @@ export default function RomaneioPage() {
         setCustomerName('')
         setShowExportModal(false)
         setBarcodeInput('')
+    }
+
+    const renderHistoryMenu = (g: any) => {
+        if (openHistoryMenuId !== (g.id || g.romaneio_id)) return null
+
+        const exportItems = g.items.map((m: any) => ({
+            id: m.product_id,
+            name: m.product_name || 'Produto Excluído',
+            barcode: m.product_barcode_snapshot || m.product?.barcode || null,
+            quantity: m.quantity,
+            unit: m.unit_snapshot || m.product?.unit || 'un',
+            price: m.unit_price_snapshot || m.product?.price || 0
+        }))
+
+        return (
+            <>
+                <div className="fixed inset-0 z-40" onClick={() => setOpenHistoryMenuId(null)} />
+                <div className="absolute right-0 top-12 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right text-left">
+                    <button
+                        onClick={() => {
+                            setViewMovement({
+                                customerName: g.customerName || 'Consumidor',
+                                items: exportItems
+                            })
+                            setOpenHistoryMenuId(null)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors"
+                    >
+                        <ShoppingCart className="w-4 h-4" /> Ver Itens / Detalhes
+                    </button>
+                    <button
+                        onClick={() => {
+                            setHistoricExport({
+                                customerName: g.customerName || 'Consumidor',
+                                items: exportItems
+                            })
+                            setOpenHistoryMenuId(null)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                    >
+                        <Smartphone className="w-4 h-4" /> Imprimir / Zap
+                    </button>
+                    <button
+                        onClick={async () => {
+                            setOpenHistoryMenuId(null)
+                            try {
+                                setLoading(true)
+                                const newCart: CartItem[] = []
+                                for (const historicItem of g.items) {
+                                    try {
+                                        const res = await api.get(`/products/${historicItem.product_id}`)
+                                        if (res.data) {
+                                            newCart.push({
+                                                id: res.data.id,
+                                                name: res.data.name,
+                                                barcode: res.data.barcode,
+                                                quantity: historicItem.quantity,
+                                                unit: res.data.unit,
+                                                price: res.data.price
+                                            })
+                                        }
+                                    } catch {
+                                        toast.error(`Produto "${historicItem.product_name || 'Desconhecido'}" não encontrado.`)
+                                    }
+                                }
+                                setCartItems(newCart)
+                                setCustomerName(g.customerName || '')
+                                setActiveTab('romaneio')
+                                toast.success('Pedido copiado! Revise o romaneio.')
+                            } catch (err) {
+                                toast.error('Erro ao copiar pedido.')
+                            } finally {
+                                setLoading(false)
+                            }
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                    >
+                        <Plus className="w-4 h-4" /> Copiar Pedido
+                    </button>
+                </div>
+            </>
+        )
     }
 
     const filteredAndSortedStock = useMemo(() => {
@@ -409,7 +535,7 @@ export default function RomaneioPage() {
             </div>
 
             {activeTab === 'romaneio' && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 pb-24 lg:pb-0">
                     {/* LEFTSIDE: BARCODE + CARRINHO */}
                     <div className="flex flex-col gap-6">
 
@@ -523,10 +649,11 @@ export default function RomaneioPage() {
                                     </div>
                                     <button
                                         onClick={() => setCameraOpen(true)}
-                                        className="h-11 px-3 bg-white border border-gray-200 text-gray-400 hover:text-blue-600 rounded-xl transition-all flex items-center justify-center shrink-0"
+                                        className="h-11 px-4 bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all flex items-center justify-center shrink-0 gap-2 font-bold text-xs active:scale-95 shadow-sm"
                                         title="Usar câmera"
                                     >
                                         <Camera className="w-5 h-5" />
+                                        <span className="hidden sm:inline uppercase tracking-widest">Scanner</span>
                                     </button>
                                 </div>
                             </div>
@@ -576,6 +703,19 @@ export default function RomaneioPage() {
 
                                                 {/* Controle de Quantidade */}
                                                 <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+                                                    <button
+                                                        onClick={() => {
+                                                            const newQty = Math.max(0, item.quantity - 1)
+                                                            if (newQty === 0) {
+                                                                removeFromCart(item.id)
+                                                            } else {
+                                                                updateCartQuantity(item.id, String(newQty), item.unit)
+                                                            }
+                                                        }}
+                                                        className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                                    >
+                                                        <Minus className="w-3 h-3" />
+                                                    </button>
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -583,9 +723,15 @@ export default function RomaneioPage() {
                                                         value={item.quantity}
                                                         onChange={(e) => updateCartQuantity(item.id, e.target.value, item.unit)}
                                                         onBlur={() => handleQuantityBlur(item.id)}
-                                                        className="w-16 h-7 text-center text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent"
+                                                        className="w-12 h-7 text-center text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
                                                     />
-                                                    <span className="text-[10px] font-bold text-gray-400 pr-2 uppercase">{item.unit}</span>
+                                                    <button
+                                                        onClick={() => updateCartQuantity(item.id, String(item.quantity + 1), item.unit)}
+                                                        className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                    </button>
+                                                    <span className="text-[10px] font-bold text-gray-400 pr-2 uppercase ml-1">{item.unit}</span>
                                                 </div>
 
                                                 <button
@@ -647,248 +793,337 @@ export default function RomaneioPage() {
                             )}
                         </div>
                     </div>
+
+                    {/* Mobile Sticky Footer */}
+                    {cartItems.length > 0 && (
+                        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 p-4 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-300">
+                            <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</span>
+                                    <span className="text-lg font-black text-emerald-400">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0))}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={handleFinalizeRomaneio}
+                                    disabled={submitting}
+                                    className="flex-1 h-12 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    {submitting ? 'Registrando...' : 'Finalizar'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
             {activeTab === 'movimentacoes' && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm transition-all duration-300">
-                    <div className="overflow-x-auto min-h-[400px]">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-gray-50/80 border-b border-gray-100">
-                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
-                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Descrição / Produto</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</th>
-                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Qtd / Itens</th>
-                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {loading ? (
-                                    <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
-                                ) : groupedMovements.length === 0 ? (
-                                    <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Nenhuma movimentação registrada</td></tr>
-                                ) : (
-                                    groupedMovements.map((g) => (
-                                        <tr key={g.id} className={`hover:bg-gray-50/50 transition-colors ${g.isGroup ? 'bg-blue-50/20' : ''}`}>
-                                            <td className="px-4 py-3 text-gray-500 text-xs">
-                                                {new Date(g.created_at).toLocaleString('pt-BR')}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {g.isGroup ? (
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold text-gray-900">Romaneio: {g.customerName || 'Consumidor'}</span>
-                                                        <span className="text-[10px] text-gray-400 uppercase tracking-tight">ID: {g.id}</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-gray-800">
-                                                            {g.product_name || 'Produto Excluído'}
-                                                        </span>
-                                                        {g.notes && <span className="text-[10px] text-gray-400 italic">{g.notes}</span>}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${g.type === 'OUT' || g.movement_type === 'OUT' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                                    {g.isGroup ? 'ROMANEIO' : (g.movement_type === 'IN' ? 'ENTRADA' : 'SAÍDA')}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {g.isGroup ? (
-                                                    <span className="font-bold text-blue-600">{g.items.length} itens</span>
-                                                ) : (
-                                                    <span className="font-semibold text-gray-700">{g.quantity}</span>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {(g.isGroup || g.movement_type === 'OUT') && (
-                                                    <div className="relative flex justify-end">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setOpenHistoryMenuId(openHistoryMenuId === (g.id || g.romaneio_id) ? null : (g.id || g.romaneio_id))
-                                                            }}
-                                                            className={`p-2.5 rounded-xl transition-all ${openHistoryMenuId === (g.id || g.romaneio_id) ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
-                                                        >
-                                                            <MoreVertical className="w-5 h-5" />
-                                                        </button>
+                <div className="space-y-4">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto min-h-[400px]">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50/80 border-b border-gray-100">
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Descrição / Produto</th>
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</th>
+                                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Qtd / Itens</th>
+                                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {loading ? (
+                                        <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
+                                    ) : groupedMovements.length === 0 ? (
+                                        <tr><td colSpan={5} className="py-10 text-center text-gray-400 italic">Nenhuma movimentação registrada</td></tr>
+                                    ) : (
+                                        groupedMovements.map((g) => (
+                                            <tr key={g.id} className={`hover:bg-gray-50/50 transition-colors ${g.isGroup ? 'bg-blue-50/20' : ''}`}>
+                                                <td className="px-4 py-3 text-gray-500 text-xs">
+                                                    {new Date(g.created_at).toLocaleString('pt-BR')}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {g.isGroup ? (
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-gray-900">Romaneio: {g.customerName || 'Consumidor'}</span>
+                                                            <span className="text-[10px] text-gray-400 uppercase tracking-tight">ID: {g.id}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium text-gray-800">
+                                                                {g.product_name || 'Produto Excluído'}
+                                                            </span>
+                                                            {g.notes && <span className="text-[10px] text-gray-400 italic">{g.notes}</span>}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${g.type === 'OUT' || g.movement_type === 'OUT' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                        {g.isGroup ? 'ROMANEIO' : (g.movement_type === 'IN' ? 'ENTRADA' : 'SAÍDA')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {g.isGroup ? (
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-bold text-blue-600">{g.items.length} itens</span>
+                                                            <span className="text-xs font-black text-emerald-600 mt-0.5">
+                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(g.totalValue)}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-semibold text-gray-700">{g.quantity} {g.unit || 'UN'}</span>
+                                                            {g.totalValue > 0 && (
+                                                                <span className="text-[10px] text-gray-400">
+                                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(g.totalValue)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {(g.isGroup || g.movement_type === 'OUT') && (
+                                                        <div className="relative flex justify-end">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    setOpenHistoryMenuId(openHistoryMenuId === (g.id || g.romaneio_id) ? null : (g.id || g.romaneio_id))
+                                                                }}
+                                                                className={`p-2.5 rounded-xl transition-all ${openHistoryMenuId === (g.id || g.romaneio_id) ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                            >
+                                                                <MoreVertical className="w-5 h-5" />
+                                                            </button>
+                                                            {renderHistoryMenu(g)}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                                                        {openHistoryMenuId === (g.id || g.romaneio_id) && (
-                                                            <>
-                                                                <div className="fixed inset-0 z-40" onClick={() => setOpenHistoryMenuId(null)} />
-                                                                <div className="absolute right-0 top-12 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const itemsForExport = g.items.map((m: any) => ({
-                                                                                id: m.product_id,
-                                                                                name: m.product_name || 'Produto Excluído',
-                                                                                barcode: m.product_barcode_snapshot || m.product?.barcode || null,
-                                                                                quantity: m.quantity,
-                                                                                unit: m.unit_snapshot || m.product?.unit || 'un',
-                                                                                price: m.unit_price_snapshot || m.product?.price || 0
-                                                                            }))
-                                                                            setHistoricExport({
-                                                                                customerName: g.customerName || 'Consumidor',
-                                                                                items: itemsForExport
-                                                                            })
-                                                                            setOpenHistoryMenuId(null)
-                                                                        }}
-                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors text-left"
-                                                                    >
-                                                                        <Smartphone className="w-4 h-4" /> Imprimir / Zap
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={async () => {
-                                                                            setOpenHistoryMenuId(null)
-                                                                            try {
-                                                                                setLoading(true)
-                                                                                const newCart: CartItem[] = []
-                                                                                for (const historicItem of g.items) {
-                                                                                    try {
-                                                                                        const res = await api.get(`/products/${historicItem.product_id}`)
-                                                                                        if (res.data) {
-                                                                                            newCart.push({
-                                                                                                id: res.data.id,
-                                                                                                name: res.data.name,
-                                                                                                barcode: res.data.barcode,
-                                                                                                quantity: historicItem.quantity,
-                                                                                                unit: res.data.unit,
-                                                                                                price: res.data.price
-                                                                                            })
-                                                                                        }
-                                                                                    } catch {
-                                                                                        toast.error(`Produto "${historicItem.product_name || 'Desconhecido'}" não encontrado.`)
-                                                                                    }
-                                                                                }
-                                                                                setCartItems(newCart)
-                                                                                setCustomerName(g.customerName || '')
-                                                                                setActiveTab('romaneio')
-                                                                                toast.success('Pedido copiado! Revise o romaneio.')
-                                                                            } catch (err) {
-                                                                                toast.error('Erro ao copiar pedido.')
-                                                                            } finally {
-                                                                                setLoading(false)
-                                                                            }
-                                                                        }}
-                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors text-left"
-                                                                    >
-                                                                        <Plus className="w-4 h-4" /> Copiar Pedido
-                                                                    </button>
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-3">
+                        {loading ? (
+                            <div className="text-center py-10 text-gray-400 italic">Carregando...</div>
+                        ) : groupedMovements.length === 0 ? (
+                            <div className="text-center py-10 text-gray-400 italic">Nenhuma movimentação registrada</div>
+                        ) : (
+                            groupedMovements.map((g) => (
+                                <div key={g.id} className={`p-4 rounded-2xl border ${g.isGroup ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-100'} shadow-sm space-y-3`}>
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                {new Date(g.created_at).toLocaleString('pt-BR')}
+                                            </span>
+                                            {g.isGroup ? (
+                                                <span className="font-bold text-gray-900 mt-1">Romaneio: {g.customerName || 'Consumidor'}</span>
+                                            ) : (
+                                                <span className="font-bold text-gray-900 mt-1">{g.product_name || 'Produto Excluído'}</span>
+                                            )}
+                                        </div>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${g.type === 'OUT' || g.movement_type === 'OUT' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                            {g.isGroup ? 'ROMANEIO' : (g.movement_type === 'IN' ? 'ENTRADA' : 'SAÍDA')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-end justify-between">
+                                        <div>
+                                            {g.isGroup ? (
+                                                <p className="text-[10px] text-gray-400 uppercase font-black">ID: {g.id}</p>
+                                            ) : (
+                                                g.notes && <p className="text-xs text-gray-400 italic">{g.notes}</p>
+                                            )}
+                                            <div className="flex flex-col">
+                                                <p className="text-sm font-black text-slate-700 mt-1">
+                                                    {g.isGroup ? `${g.items.length} Produtos` : `${g.quantity} ${g.unit || 'UN'}`}
+                                                </p>
+                                                {g.totalValue > 0 && (
+                                                    <p className="text-xs font-black text-emerald-600">
+                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(g.totalValue)}
+                                                    </p>
                                                 )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                            </div>
+                                        </div>
+                                        {(g.isGroup || g.movement_type === 'OUT') && (
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setOpenHistoryMenuId(openHistoryMenuId === (g.id || g.romaneio_id) ? null : (g.id || g.romaneio_id))
+                                                    }}
+                                                    className="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl active:bg-brand-50 active:text-brand-600 transition-all border border-gray-100 shadow-sm"
+                                                >
+                                                    <MoreVertical className="w-5 h-5" />
+                                                </button>
+                                                {renderHistoryMenu(g)}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             )}
 
             {activeTab === 'estoque' && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-[600px] transition-all duration-300">
-                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                        <div className="relative w-full max-w-sm">
+                <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="relative w-full">
+                            <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Buscar no estoque por nome ou código..."
+                                placeholder="Filtrar por nome ou código..."
                                 value={estoqueSearch}
                                 onChange={(e) => {
                                     setEstoqueSearch(e.target.value)
                                     setEstoquePage(1)
                                 }}
-                                className="w-full h-10 pl-4 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 font-medium shadow-sm"
+                                className="w-full h-11 pl-11 pr-10 text-sm bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 transition-all placeholder-gray-400 font-medium"
                             />
                         </div>
-                        <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-                            {filteredAndSortedStock.length} {filteredAndSortedStock.length === 1 ? 'resultado' : 'resultados'}
+                        <span className="whitespace-nowrap text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                            {filteredAndSortedStock.length} {filteredAndSortedStock.length === 1 ? 'Produto' : 'Produtos'}
                         </span>
                     </div>
 
-                    <div className="overflow-y-auto flex-1 relative">
-                        <table className="w-full text-sm">
-                            <thead className="sticky top-0 bg-gray-50/95 backdrop-blur shadow-sm z-10">
-                                <tr>
-                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
-                                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Código</th>
-                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
-                                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Mínimo</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {loading ? (
-                                    <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
-                                ) : currentEstoqueItems.length === 0 ? (
-                                    <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Nenhum dado de estoque encontrado</td></tr>
-                                ) : (
-                                    currentEstoqueItems.map((s) => (
-                                        <tr key={s.product_id} className="hover:bg-gray-50/50 transition-colors group">
-                                            <td className="px-4 py-3 font-medium text-gray-900">{s.product_name}</td>
-                                            <td className="px-4 py-3 text-xs font-mono text-gray-400">{s.barcode || '—'}</td>
-                                            <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                                                {s.stock_quantity} <span className="text-[10px] text-gray-400 uppercase">{s.unit}</span>
-                                                {s.is_low_stock && <AlertTriangle className="w-3 h-3 text-amber-500 inline ml-1" />}
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-gray-400">{s.min_stock}</td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.is_low_stock ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                                    {s.is_low_stock ? 'BAIXO' : 'OK'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <button
-                                                    onClick={() => {
-                                                        addToCart({
-                                                            id: s.product_id,
-                                                            name: s.product_name,
-                                                            barcode: s.barcode,
-                                                            stock_quantity: s.stock_quantity,
-                                                            min_stock: s.min_stock,
-                                                            unit: s.unit,
-                                                            price: s.price,
-                                                            sku: null
-                                                        })
-                                                        // Opcional: Feedback visual ao clicar
-                                                    }}
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 mx-auto"
-                                                    title="Adicionar ao Romaneio"
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                    Romaneio
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="relative">
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-gray-50/95 backdrop-blur shadow-sm z-10">
+                                    <tr>
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Código</th>
+                                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
+                                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Mínimo</th>
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {loading ? (
+                                        <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
+                                    ) : currentEstoqueItems.length === 0 ? (
+                                        <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Nenhum dado de estoque encontrado</td></tr>
+                                    ) : (
+                                        currentEstoqueItems.map((s) => (
+                                            <tr key={s.product_id} className="hover:bg-gray-50/50 transition-colors group">
+                                                <td className="px-4 py-3 font-medium text-gray-900">{s.product_name}</td>
+                                                <td className="px-4 py-3 text-xs font-mono text-gray-400">{s.barcode || '—'}</td>
+                                                <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                                                    {s.stock_quantity} <span className="text-[10px] text-gray-400 uppercase">{s.unit}</span>
+                                                    {s.is_low_stock && <AlertTriangle className="w-3 h-3 text-amber-500 inline ml-1" />}
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-gray-400">{s.min_stock}</td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.is_low_stock ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                        {s.is_low_stock ? 'BAIXO' : 'OK'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <button
+                                                        onClick={() => {
+                                                            addToCart({
+                                                                id: s.product_id,
+                                                                name: s.product_name,
+                                                                barcode: s.barcode,
+                                                                stock_quantity: s.stock_quantity,
+                                                                min_stock: s.min_stock,
+                                                                unit: s.unit,
+                                                                price: s.price,
+                                                                sku: null
+                                                            })
+                                                            toast.success(`Produtos adicionado!`, { icon: '🛒', duration: 1500 })
+                                                        }}
+                                                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 mx-auto"
+                                                        title="Adicionar ao Romaneio"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                        Romaneio
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-3 pb-20">
+                        {loading ? (
+                            <div className="text-center py-10 text-gray-400 italic">Carregando...</div>
+                        ) : currentEstoqueItems.length === 0 ? (
+                            <div className="text-center py-10 text-gray-400 italic">Nenhum dado de estoque encontrado</div>
+                        ) : (
+                            currentEstoqueItems.map((s) => (
+                                <div key={s.product_id} className="p-4 rounded-2xl bg-white border border-gray-100 shadow-sm space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-bold text-gray-900 line-clamp-2">{s.product_name}</h3>
+                                            <p className="text-xs font-mono text-gray-400 mt-0.5">{s.barcode || 'Sem código'}</p>
+                                        </div>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.is_low_stock ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                            {s.is_low_stock ? 'BAIXO' : 'OK'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-end justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estoque Atual</p>
+                                            <p className="text-lg font-black text-slate-800">
+                                                {s.stock_quantity} <span className="text-xs font-bold text-gray-400 uppercase">{s.unit}</span>
+                                            </p>
+                                            <p className="text-[10px] text-gray-400">Mínimo: {s.min_stock} {s.unit}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                addToCart({
+                                                    id: s.product_id,
+                                                    name: s.product_name,
+                                                    barcode: s.barcode,
+                                                    stock_quantity: s.stock_quantity,
+                                                    min_stock: s.min_stock,
+                                                    unit: s.unit,
+                                                    price: s.price,
+                                                    sku: null
+                                                })
+                                                toast.success(`Produtos adicionado!`, { icon: '🛒', duration: 1500 })
+                                            }}
+                                            className="h-10 px-4 bg-brand-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-brand-500/20"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Romaneio
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     {/* Paginação */}
                     {totalEstoquePages > 0 && (
-                        <div className="p-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-sm">
+                        <div className="p-4 bg-white rounded-2xl border border-gray-100 flex items-center justify-between text-sm shadow-sm">
                             <span className="text-gray-500 font-medium">
                                 Página <strong className="text-gray-900">{estoquePage}</strong> de {totalEstoquePages}
                             </span>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setEstoquePage(p => Math.max(1, p - 1))}
                                     disabled={estoquePage === 1}
-                                    className="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-semibold disabled:opacity-50 disabled:bg-gray-50 hover:bg-gray-50 transition-colors"
+                                    className="h-9 px-4 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold disabled:opacity-30 disabled:grayscale hover:bg-gray-50 transition-colors"
                                 >
                                     Anterior
                                 </button>
                                 <button
                                     onClick={() => setEstoquePage(p => Math.min(totalEstoquePages, p + 1))}
                                     disabled={estoquePage === totalEstoquePages}
-                                    className="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-semibold disabled:opacity-50 disabled:bg-gray-50 hover:bg-gray-50 transition-colors"
+                                    className="h-9 px-4 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold disabled:opacity-30 disabled:grayscale hover:bg-gray-50 transition-colors"
                                 >
                                     Próxima
                                 </button>
@@ -932,6 +1167,74 @@ export default function RomaneioPage() {
                     onScan={handleBarcodeScan}
                     onClose={() => setCameraOpen(false)}
                 />
+            )}
+
+            {/* Visualização de Detalhes do Histórico */}
+            {viewMovement && (
+                <MovementDetailsModal
+                    customerName={viewMovement.customerName}
+                    items={viewMovement.items}
+                    onClose={() => setViewMovement(null)}
+                    onExport={() => {
+                        setHistoricExport(viewMovement)
+                        setViewMovement(null)
+                    }}
+                />
+            )}
+
+            {/* Modal de Validação de Estoque (Aviso) */}
+            {stockValidationError && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-red-950/40 backdrop-blur-md" onClick={() => setStockValidationError(null)} />
+                    <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-red-100">
+                        <div className="px-8 py-6 border-b border-red-50 bg-red-50/50 flex items-center gap-4">
+                            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shrink-0">
+                                <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-red-900 tracking-tight">Estoque Insuficiente</h2>
+                                <p className="text-sm font-bold text-red-600/60 mt-0.5">Alguns itens excedem o saldo atual</p>
+                            </div>
+                        </div>
+
+                        <div className="p-8 space-y-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                            {stockValidationError.map((err, idx) => (
+                                <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p className="font-bold text-slate-900 text-sm leading-tight">{err.productName}</p>
+                                    <div className="flex items-center justify-between mt-3 text-xs">
+                                        <div className="text-slate-500">
+                                            Solicitado: <span className="font-black text-slate-900">{err.requested} {err.unit}</span>
+                                        </div>
+                                        <div className="text-red-600 font-bold bg-white px-2 py-1 rounded-lg border border-red-100">
+                                            Disponível: {err.available} {err.unit}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed text-center px-4">
+                                Deseja prosseguir com a saída mesmo com o estoque negativo ou prefere ajustar as quantidades?
+                            </p>
+                        </div>
+
+                        <div className="p-8 pt-4 flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    setStockValidationError(null)
+                                    executeFinalize()
+                                }}
+                                className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-red-600/20"
+                            >
+                                Confirmar Saída Mesmo Assim
+                            </button>
+                            <button
+                                onClick={() => setStockValidationError(null)}
+                                className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm transition-all active:scale-95"
+                            >
+                                Voltar e Ajustar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )
