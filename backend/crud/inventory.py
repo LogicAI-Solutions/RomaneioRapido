@@ -44,7 +44,10 @@ def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int
 
 
 def get_movements(db: Session, product_id: int = None, skip: int = 0, limit: int = 100):
-    query = db.query(InventoryMovement).options(joinedload(InventoryMovement.product))
+    query = db.query(InventoryMovement).options(
+        joinedload(InventoryMovement.product),
+        joinedload(InventoryMovement.client)
+    )
     if product_id:
         query = query.filter(InventoryMovement.product_id == product_id)
     return query.order_by(InventoryMovement.created_at.desc()).offset(skip).limit(limit).all()

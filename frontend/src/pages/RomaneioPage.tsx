@@ -57,6 +57,8 @@ export default function RomaneioPage() {
     // Novo Formato "Carrinho"
     const [cartItems, setCartItems] = useState<CartItem[]>([])
     const [customerName, setCustomerName] = useState('')
+    const [customerPhone, setCustomerPhone] = useState<string | null>(null)
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
     const [showExportModal, setShowExportModal] = useState(false)
 
     const [loading, setLoading] = useState(false)
@@ -88,6 +90,8 @@ export default function RomaneioPage() {
         requested: number,
         unit: string
     }[] | null>(null)
+    const [showNavigationConfirm, setShowNavigationConfirm] = useState(false)
+    const [pendingTab, setPendingTab] = useState<'romaneio' | 'movimentacoes' | 'estoque' | null>(null)
 
     // Agrupamento de Movimentações para permitir Re-gerar Romaneios
     const groupedMovements = useMemo(() => {
@@ -106,7 +110,8 @@ export default function RomaneioPage() {
                     groups[m.romaneio_id] = {
                         id: m.romaneio_id,
                         created_at: m.created_at,
-                        customerName: cName,
+                        customerName: m.client?.name || cName || 'Consumidor',
+                        customerPhone: m.client?.phone || null,
                         items: [],
                         type: m.movement_type,
                         totalValue: 0
@@ -114,6 +119,12 @@ export default function RomaneioPage() {
                 }
                 groups[m.romaneio_id].items.push(m)
                 groups[m.romaneio_id].totalValue += (m.quantity * (m.unit_price_snapshot || 0))
+
+                // Atualiza com dados do cliente se disponíveis (em caso de múltiplos itens, o último sobrescreve mas são do mesmo romaneio)
+                if (m.client) {
+                    groups[m.romaneio_id].customerName = m.client.name;
+                    groups[m.romaneio_id].customerPhone = m.client.phone;
+                }
             } else {
                 singles.push({
                     ...m,
@@ -178,6 +189,27 @@ export default function RomaneioPage() {
             fetchStockLevels()
         }
     }, [activeTab])
+
+    // Aviso de saída da página se houver itens no romaneio
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (cartItems.length > 0) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [cartItems])
+
+    const handleTabChange = (tab: 'romaneio' | 'movimentacoes' | 'estoque') => {
+        if (activeTab === 'romaneio' && cartItems.length > 0 && tab !== 'romaneio') {
+            setPendingTab(tab)
+            setShowNavigationConfirm(true)
+        } else {
+            setActiveTab(tab)
+        }
+    }
 
     // Busca Esperta: Autocomplete em tempo real ao digitar
     useEffect(() => {
@@ -372,6 +404,7 @@ export default function RomaneioPage() {
                     movement_type: 'OUT',
                     notes: customerName ? `Romaneio: ${customerName} ` : 'Romaneio Rápido',
                     romaneio_id: romaneioBatchId,
+                    client_id: selectedClientId,
                     product_name_snapshot: item.name,
                     product_barcode_snapshot: item.barcode,
                     unit_price_snapshot: item.price,
@@ -394,6 +427,8 @@ export default function RomaneioPage() {
     const resetCart = () => {
         setCartItems([])
         setCustomerName('')
+        setCustomerPhone(null)
+        setSelectedClientId(null)
         setShowExportModal(false)
         setBarcodeInput('')
     }
@@ -420,6 +455,7 @@ export default function RomaneioPage() {
                                 customerName: g.customerName || 'Consumidor',
                                 items: exportItems
                             })
+                            setCustomerPhone(g.customerPhone)
                             setOpenHistoryMenuId(null)
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors"
@@ -432,12 +468,13 @@ export default function RomaneioPage() {
                                 customerName: g.customerName || 'Consumidor',
                                 items: exportItems
                             })
+                            setCustomerPhone(g.customerPhone)
                             setOpenHistoryMenuId(null)
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                     >
                         <Smartphone className="w-4 h-4" /> Imprimir / Zap
-                    </button>
+                    </button >
                     <button
                         onClick={async () => {
                             setOpenHistoryMenuId(null)
@@ -463,6 +500,7 @@ export default function RomaneioPage() {
                                 }
                                 setCartItems(newCart)
                                 setCustomerName(g.customerName || '')
+                                setCustomerPhone(null) // Phone não está no snapshot de movimento ainda
                                 setActiveTab('romaneio')
                                 toast.success('Pedido copiado! Revise o romaneio.')
                             } catch (err) {
@@ -475,7 +513,7 @@ export default function RomaneioPage() {
                     >
                         <Plus className="w-4 h-4" /> Copiar Pedido
                     </button>
-                </div>
+                </div >
             </>
         )
     }
@@ -515,19 +553,19 @@ export default function RomaneioPage() {
             {/* Tabs */}
             <div className="flex bg-white border border-gray-100 rounded-xl p-1 mb-6 shadow-sm max-w-fit">
                 <button
-                    onClick={() => setActiveTab('romaneio')}
+                    onClick={() => handleTabChange('romaneio')}
                     className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'romaneio' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     Romaneio
                 </button>
                 <button
-                    onClick={() => setActiveTab('movimentacoes')}
+                    onClick={() => handleTabChange('movimentacoes')}
                     className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'movimentacoes' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     Movimentações
                 </button>
                 <button
-                    onClick={() => setActiveTab('estoque')}
+                    onClick={() => handleTabChange('estoque')}
                     className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'estoque' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     Estoque
@@ -590,6 +628,8 @@ export default function RomaneioPage() {
                                                     onClick={() => {
                                                         const docInfo = c.document ? ` - CPF/CNPJ: ${c.document}` : ''
                                                         setCustomerName(`${c.name}${docInfo}`)
+                                                        setSelectedClientId(c.id)
+                                                        setCustomerPhone(c.phone)
                                                         setShowClientDropdown(false)
                                                     }}
                                                     className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex flex-col"
@@ -683,22 +723,29 @@ export default function RomaneioPage() {
                                 <div className="space-y-2">
                                     {cartItems.map((item, idx) => (
                                         <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl transition-all group animate-in slide-in-from-left-2">
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 pr-4">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-gray-400 w-5">{idx + 1}.</span>
-                                                    <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
+                                                    <span className="text-xs font-bold text-gray-400 w-5 shrink-0">{idx + 1}.</span>
+                                                    <p className="text-sm font-bold text-gray-900 truncate" title={item.name}>{item.name}</p>
                                                 </div>
-                                                <div className="flex items-center gap-3 ml-7 mt-0.5">
-                                                    <p className="text-[10px] text-gray-400 font-mono">{item.barcode || 'Sem código'}</p>
-                                                    <span className="text-[10px] text-gray-300">|</span>
-                                                    <p className="text-xs font-bold text-emerald-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                <div className="flex flex-wrap items-center gap-y-1 gap-x-3 ml-7 mt-1">
+                                                    <p className="text-[10px] text-gray-400 font-mono shrink-0">{item.barcode || 'Sem código'}</p>
+                                                    <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
+                                                    <p className="text-xs font-bold text-emerald-600 shrink-0">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                    <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Estoque:</span>
+                                                        <span className={`text-[10px] font-black ${(stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0) <= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+                                                            {stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0} {item.unit}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-wrap items-center justify-end gap-3 ml-7 sm:ml-0">
-                                                <div className="text-right hidden sm:block w-24">
-                                                    <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Subtotal</p>
-                                                    <p className="text-sm font-black text-gray-800">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
+                                            <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
+                                                <div className="text-left sm:text-right w-32 shrink-0">
+                                                    <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Subtotal</p>
+                                                    <p className="text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
                                                 </div>
 
                                                 {/* Controle de Quantidade */}
@@ -1133,21 +1180,23 @@ export default function RomaneioPage() {
                 </div>
             )}
 
-            {/* Modal de Exportação para Romaneio Recém Criado */}
             {showExportModal && (
                 <RomaneioExportModal
-                    customerName={customerName}
-                    items={cartItems}
+                    isOpen={showExportModal}
                     onClose={resetCart}
+                    customerName={customerName || 'Consumidor'}
+                    customerPhone={customerPhone}
+                    items={cartItems}
                 />
             )}
 
-            {/* Modal de Exportação para Romaneio do Histórico (Regerar) */}
             {historicExport && (
                 <RomaneioExportModal
-                    customerName={historicExport.customerName}
-                    items={historicExport.items}
+                    isOpen={!!historicExport}
                     onClose={() => setHistoricExport(null)}
+                    customerName={historicExport.customerName}
+                    customerPhone={customerPhone}
+                    items={historicExport.items}
                 />
             )}
 
@@ -1231,6 +1280,46 @@ export default function RomaneioPage() {
                                 className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm transition-all active:scale-95"
                             >
                                 Voltar e Ajustar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmação de Navegação (Substitui Alerta Nativo) */}
+            {showNavigationConfirm && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => setShowNavigationConfirm(false)} />
+                    <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                        <div className="px-8 py-8 flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-red-100/50">
+                                <AlertTriangle className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Abandonar Romaneio?</h2>
+                            <p className="text-sm font-bold text-slate-500 leading-relaxed px-2">
+                                Você tem itens no carrinho que serão <span className="text-red-600">perdidos</span> se mudar de tela agora.
+                            </p>
+                        </div>
+
+                        <div className="p-8 pt-0 flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    if (pendingTab) setActiveTab(pendingTab)
+                                    setShowNavigationConfirm(false)
+                                    setPendingTab(null)
+                                }}
+                                className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-red-600/20"
+                            >
+                                Sim, desejo sair
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowNavigationConfirm(false)
+                                    setPendingTab(null)
+                                }}
+                                className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm transition-all active:scale-95"
+                            >
+                                Continuar Editando
                             </button>
                         </div>
                     </div>

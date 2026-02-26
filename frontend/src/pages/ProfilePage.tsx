@@ -23,6 +23,7 @@ import {
 import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
 import LoadingOverlay from '../components/LoadingOverlay'
+import { maskPhone } from '../utils/masks'
 
 const calculatePasswordStrength = (password: string): { score: number, color: string, label: string } => {
     if (!password) return { score: 0, color: 'bg-slate-200', label: '' }
@@ -312,7 +313,7 @@ export default function ProfilePage() {
                                             </div>
                                             <input
                                                 value={form.phone}
-                                                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                                onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })}
                                                 className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
                                                 placeholder="(00) 00000-0000"
                                             />

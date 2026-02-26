@@ -1,4 +1,5 @@
 import { Printer, Smartphone, FileText, X } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export interface CartItem {
     id: number
@@ -10,12 +11,16 @@ export interface CartItem {
 }
 
 interface RomaneioExportModalProps {
+    isOpen: boolean
     customerName: string
+    customerPhone: string | null
     items: CartItem[]
     onClose: () => void
 }
 
-export default function RomaneioExportModal({ customerName, items, onClose }: RomaneioExportModalProps) {
+export default function RomaneioExportModal({ isOpen, customerName, customerPhone, items, onClose }: RomaneioExportModalProps) {
+    if (!isOpen) return null
+    const { user } = useAuth()
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     const dateStr = new Date().toLocaleString('pt-BR')
@@ -28,24 +33,37 @@ export default function RomaneioExportModal({ customerName, items, onClose }: Ro
         let text = `📦 *ROMANEIO RÁPIDO*\n`
         text += `👤 *Cliente:* ${customerName || 'Não informado'}\n`
         text += `📅 *Data:* ${dateStr}\n\n`
-        text += `*ITENS DO PEDIDO:*\n`
+        text += `✅ *ITENS DO PEDIDO:*\n`
 
         items.forEach((item, index) => {
             text += `${index + 1}. ${item.name}\n`
-            text += `   Qtd: ${item.quantity} ${item.unit} | Unit: ${formatCurrency(item.price)} | Sub: ${formatCurrency(item.price * item.quantity)}\n`
-            if (item.barcode) text += `   Cód: ${item.barcode}\n`
+            text += `   🔹 Qtd: ${item.quantity} ${item.unit} | 💸 Unit: ${formatCurrency(item.price)} | 💰 Sub: ${formatCurrency(item.price * item.quantity)}\n`
+            if (item.barcode) text += `   🏷️ Cód: ${item.barcode}\n`
             text += `\n`
         })
 
         text += `📊 *Total de Itens:* ${totalItems}\n`
-        text += `💰 *Valor Total:* ${formatCurrency(totalValue)}\n`
+        text += `💵 *Valor Total:* ${formatCurrency(totalValue)}\n`
         text += `\n_Gerado por RomaneioRapido.com.br_`
 
         return encodeURIComponent(text)
     }
 
-    const handleWhatsAppClick = () => {
-        const url = `https://wa.me/?text=${generateWhatsAppText()}`
+    const handleWhatsAppClick = (target: 'store' | 'customer') => {
+        const phone = target === 'store' ? (user?.phone || '') : (customerPhone || '')
+        const cleanPhone = phone.replace(/\D/g, '')
+
+        let finalPhone = cleanPhone
+        if (cleanPhone && cleanPhone.length <= 11) {
+            finalPhone = `55${cleanPhone}`
+        }
+
+        if (!finalPhone) {
+            alert(target === 'store' ? 'Telefone da loja não configurado no perfil!' : 'Este cliente não possui telefone cadastrado!')
+            return
+        }
+
+        const url = `https://wa.me/${finalPhone}?text=${generateWhatsAppText()}`
         window.open(url, '_blank')
     }
 
@@ -240,19 +258,37 @@ export default function RomaneioExportModal({ customerName, items, onClose }: Ro
                         </div>
                     </button>
 
-                    {/* Botão WhatsApp */}
-                    <button
-                        onClick={handleWhatsAppClick}
-                        className="w-full group relative overflow-hidden bg-white border-2 border-emerald-500 hover:border-emerald-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
-                    >
-                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Smartphone className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="font-bold text-gray-900 text-[15px]">Enviar por WhatsApp</p>
-                            <p className="text-[12px] text-gray-500 font-medium">Gera uma mensagem de texto limpa e formatada pronta para enviar para motoristas.</p>
-                        </div>
-                    </button>
+                    {/* WhatsApp Opções */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Botão WhatsApp Loja (Sempre ativo) */}
+                        <button
+                            onClick={() => handleWhatsAppClick('store')}
+                            className="group relative overflow-hidden bg-white border-2 border-emerald-500 hover:border-emerald-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
+                        >
+                            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                <Smartphone className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-gray-900 text-[13px]">Via da Loja</p>
+                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">Enviar p/ meu Zap</p>
+                            </div>
+                        </button>
+
+                        {/* Botão WhatsApp Cliente (Opcional) */}
+                        <button
+                            onClick={() => handleWhatsAppClick('customer')}
+                            disabled={!customerPhone}
+                            className={`group relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm ${customerPhone ? 'bg-white border-blue-500 hover:border-blue-600 hover:shadow-md' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed'}`}
+                        >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${customerPhone ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-300'}`}>
+                                <Smartphone className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-gray-900 text-[13px]">Via Cliente</p>
+                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{customerPhone ? 'Enviar p/ o Cliente' : 'Sem telefone'}</p>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 from backend.models.inventory import MovementType
 
@@ -14,10 +14,19 @@ class InventoryMovementBase(BaseModel):
     unit_price_snapshot: Optional[float] = None
     unit_snapshot: Optional[str] = None
     romaneio_id: Optional[str] = None
+    client_id: Optional[int] = None
 
 
 class InventoryMovementCreate(InventoryMovementBase):
     pass
+
+
+class ClientInfo(BaseModel):
+    id: int
+    name: str
+    phone: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InventoryMovementResponse(InventoryMovementBase):
@@ -25,6 +34,7 @@ class InventoryMovementResponse(InventoryMovementBase):
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
     product_name: Optional[str] = None
+    client: Optional[ClientInfo] = None
 
     model_config = ConfigDict(from_attributes=True)
 
