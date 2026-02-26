@@ -41,14 +41,28 @@ export default function DashboardPage() {
 
                 const allMovements = movementsRes.data || []
                 const todayStr = new Date().toISOString().split('T')[0]
-                const todayMovs = allMovements.filter((m: any) => m.created_at && m.created_at.startsWith(todayStr))
+                const filteredMovs = allMovements.filter((m: any) => m.created_at && m.created_at.startsWith(todayStr))
+
+                const seenRomaneios = new Set()
+                let todayCount = 0
+
+                filteredMovs.forEach((m: any) => {
+                    if (m.romaneio_id) {
+                        if (!seenRomaneios.has(m.romaneio_id)) {
+                            seenRomaneios.add(m.romaneio_id)
+                            todayCount++
+                        }
+                    } else {
+                        todayCount++
+                    }
+                })
 
                 const lowStockList = stockLevelsRes.data || []
                 const lowStockFiltered = lowStockList.filter((s: any) => s.is_low_stock)
 
                 setStats({
                     totalProducts: numProducts,
-                    todayMovements: todayMovs.length,
+                    todayMovements: todayCount,
                     lowStockCount: lowStockFiltered.length,
                 })
 
