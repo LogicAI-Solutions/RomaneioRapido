@@ -15,38 +15,42 @@ interface RomaneioExportModalProps {
     customerName: string
     customerPhone: string | null
     items: CartItem[]
+    createdAt?: string | null
     onClose: () => void
 }
 
-export default function RomaneioExportModal({ isOpen, customerName, customerPhone, items, onClose }: RomaneioExportModalProps) {
+export default function RomaneioExportModal({ isOpen, customerName, customerPhone, items, createdAt, onClose }: RomaneioExportModalProps) {
     if (!isOpen) return null
     const { user } = useAuth()
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
-    const dateStr = new Date().toLocaleString('pt-BR')
+    const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
     }
 
     const generateWhatsAppText = () => {
-        let text = `📦 *ROMANEIO RÁPIDO*\n`
-        text += `👤 *Cliente:* ${customerName || 'Não informado'}\n`
-        text += `📅 *Data:* ${dateStr}\n\n`
-        text += `✅ *ITENS DO PEDIDO:*\n`
+        let text = `\u{1F4E6} *ROMANEIO RÁPIDO*\n`
+        text += `\u{1F464} *Cliente:* ${customerName || 'Não informado'}\n`
+        text += `\u{1F4C5} *Data:* ${dateStr}\n\n`
+        text += `\u{2705} *ITENS DO PEDIDO:*\n`
 
         items.forEach((item, index) => {
             text += `${index + 1}. ${item.name}\n`
-            text += `   🔹 Qtd: ${item.quantity} ${item.unit} | 💸 Unit: ${formatCurrency(item.price)} | 💰 Sub: ${formatCurrency(item.price * item.quantity)}\n`
-            if (item.barcode) text += `   🏷️ Cód: ${item.barcode}\n`
+            text += `   \u{1F539} Qtd: ${item.quantity} ${item.unit} | \u{1F4B8} Unit: ${formatCurrency(item.price)} | \u{1F4B0} Sub: ${formatCurrency(item.price * item.quantity)}\n`
+            if (item.barcode) text += `   \u{1F3F7} Cód: ${item.barcode}\n`
             text += `\n`
         })
 
-        text += `📊 *Total de Itens:* ${totalItems}\n`
-        text += `💵 *Valor Total:* ${formatCurrency(totalValue)}\n`
+        text += `\u{1F4CA} *Total de Itens:* ${totalItems}\n`
+        text += `\u{1F4B5} *Valor Total:* ${formatCurrency(totalValue)}\n`
         text += `\n_Gerado por RomaneioRapido.com.br_`
 
-        return encodeURIComponent(text)
+        // Limpeza de caracteres invisíveis e espaços especiais (comum em Intl.NumberFormat)
+        const cleanText = text.replace(/\xA0/g, ' ')
+
+        return encodeURIComponent(cleanText).replace(/%20/g, '+')
     }
 
     const handleWhatsAppClick = (target: 'store' | 'customer') => {
@@ -63,8 +67,8 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
             return
         }
 
-        const url = `https://wa.me/${finalPhone}?text=${generateWhatsAppText()}`
-        window.open(url, '_blank')
+        const url = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${generateWhatsAppText()}`
+        window.open(url, '_blank', 'noopener,noreferrer')
     }
 
     const printA4 = () => {

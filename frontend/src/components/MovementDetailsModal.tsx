@@ -4,13 +4,15 @@ import type { CartItem } from './RomaneioExportModal'
 interface MovementDetailsModalProps {
     customerName: string
     items: CartItem[]
+    createdAt?: string | null
     onClose: () => void
     onExport: () => void
 }
 
-export default function MovementDetailsModal({ customerName, items, onClose, onExport }: MovementDetailsModalProps) {
+export default function MovementDetailsModal({ customerName, items, createdAt, onClose, onExport }: MovementDetailsModalProps) {
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : ''
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -24,7 +26,10 @@ export default function MovementDetailsModal({ customerName, items, onClose, onE
                 {/* Header */}
                 <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white">
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Detalhes do Pedido</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Detalhes do Pedido</h2>
+                            {dateStr && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold">{dateStr}</span>}
+                        </div>
                         <p className="text-sm font-bold text-slate-400 mt-0.5">{customerName || 'Consumidor Final'}</p>
                     </div>
                     <button onClick={onClose} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-full transition-all">

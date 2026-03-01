@@ -87,8 +87,8 @@ export default function RomaneioPage() {
     const [stockLevels, setStockLevels] = useState<StockLevel[]>([])
 
     // Estado para Regerar Romaneio Histórico
-    const [historicExport, setHistoricExport] = useState<{ customerName: string, items: CartItem[] } | null>(null)
-    const [viewMovement, setViewMovement] = useState<{ customerName: string, items: CartItem[] } | null>(null)
+    const [historicExport, setHistoricExport] = useState<{ customerName: string, createdAt: string, items: CartItem[] } | null>(null)
+    const [viewMovement, setViewMovement] = useState<{ customerName: string, createdAt: string, items: CartItem[] } | null>(null)
     const [openHistoryMenuId, setOpenHistoryMenuId] = useState<string | number | null>(null)
 
     // Estado para Validação de Estoque
@@ -572,6 +572,7 @@ export default function RomaneioPage() {
                         onClick={() => {
                             setViewMovement({
                                 customerName: g.customerName || 'Consumidor',
+                                createdAt: g.created_at,
                                 items: exportItems
                             })
                             setCustomerPhone(g.customerPhone)
@@ -585,6 +586,7 @@ export default function RomaneioPage() {
                         onClick={() => {
                             setHistoricExport({
                                 customerName: g.customerName || 'Consumidor',
+                                createdAt: g.created_at,
                                 items: exportItems
                             })
                             setCustomerPhone(g.customerPhone)
@@ -1338,6 +1340,7 @@ export default function RomaneioPage() {
                     customerName={historicExport.customerName}
                     customerPhone={customerPhone}
                     items={historicExport.items}
+                    createdAt={historicExport.createdAt}
                 />
             )}
 
@@ -1364,6 +1367,7 @@ export default function RomaneioPage() {
                 <MovementDetailsModal
                     customerName={viewMovement.customerName}
                     items={viewMovement.items}
+                    createdAt={viewMovement.createdAt}
                     onClose={() => setViewMovement(null)}
                     onExport={() => {
                         setHistoricExport(viewMovement)
