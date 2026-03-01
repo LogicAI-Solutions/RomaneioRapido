@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
@@ -24,6 +24,7 @@ export default function ClientsPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+    const [focusedIndex, setFocusedIndex] = useState(-1)
 
     // Pagination state
     const [page, setPage] = useState(1)
@@ -53,10 +54,41 @@ export default function ClientsPage() {
 
     useEffect(() => {
         const delaySearch = setTimeout(() => {
+            setFocusedIndex(-1)
             fetchClients()
         }, 300)
         return () => clearTimeout(delaySearch)
     }, [searchQuery])
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+        if (clients.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setFocusedIndex(prev => (prev < clients.length - 1 ? prev + 1 : prev))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev))
+        } else if (e.key === 'Enter') {
+            if (focusedIndex >= 0) {
+                e.preventDefault()
+                openEdit(clients[focusedIndex])
+            }
+        } else if (e.key === 'Escape') {
+            setFocusedIndex(-1)
+        }
+    }
+
+    const tableBodyRef = useRef<HTMLTableSectionElement>(null)
+
+    useEffect(() => {
+        if (focusedIndex >= 0 && tableBodyRef.current) {
+            const row = tableBodyRef.current.children[focusedIndex] as HTMLElement
+            if (row) {
+                row.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+            }
+        }
+    }, [focusedIndex])
 
     const openCreate = () => {
         setEditing(null)
@@ -70,7 +102,7 @@ export default function ClientsPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/clients/${id}`)
+            await api.delete(`/ clients / ${id} `)
             setDeleteConfirm(null)
             fetchClients()
             toast.success('Cliente excluído com sucesso!')
@@ -102,6 +134,7 @@ export default function ClientsPage() {
                             placeholder="Buscar cliente..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleSearchKeyDown}
                             className="w-full sm:w-64 h-12 pl-12 pr-4 text-sm bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 font-semibold shadow-sm transition-all"
                         />
                     </div>
@@ -128,7 +161,7 @@ export default function ClientsPage() {
                                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100/50">
+                        <tbody ref={tableBodyRef} className="divide-y divide-slate-100">
                             {clients.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="py-20 text-center text-sm font-bold text-slate-400 italic">
@@ -136,8 +169,12 @@ export default function ClientsPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                clients.map(c => (
-                                    <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
+                                clients.map((c, index) => (
+                                    <tr
+                                        key={c.id}
+                                        className={`transition - colors cursor - pointer group ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : 'hover:bg-slate-50/50'} `}
+                                        onClick={() => openEdit(c)}
+                                    >
                                         <td className="px-8 py-5">
                                             <p className="font-bold text-slate-800 text-sm truncate max-w-[200px]">{c.name}</p>
                                         </td>
@@ -169,7 +206,7 @@ export default function ClientsPage() {
                                                         e.stopPropagation()
                                                         setOpenMenuId(openMenuId === c.id ? null : c.id)
                                                     }}
-                                                    className={`p-2.5 rounded-xl transition-all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                    className={`p - 2.5 rounded - xl transition - all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} `}
                                                 >
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
@@ -224,10 +261,10 @@ export default function ClientsPage() {
                                             {i > 0 && arr[i - 1] !== p - 1 && <span className="text-slate-300 px-1 font-bold">...</span>}
                                             <button
                                                 onClick={() => fetchClients(p)}
-                                                className={`w-10 h-10 text-xs font-bold rounded-xl transition-all shadow-sm ${p === page
-                                                    ? 'bg-brand-600 text-white'
-                                                    : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300 hover:text-brand-600'
-                                                    }`}
+                                                className={`w - 10 h - 10 text - xs font - bold rounded - xl transition - all shadow - sm ${p === page
+                                                        ? 'bg-brand-600 text-white'
+                                                        : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300 hover:text-brand-600'
+                                                    } `}
                                             >
                                                 {p}
                                             </button>

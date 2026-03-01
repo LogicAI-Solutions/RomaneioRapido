@@ -57,6 +57,7 @@ export default function ProductsPage() {
     const [sortBy, setSortBy] = useState('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [cameraOpen, setCameraOpen] = useState(false)
+    const [focusedIndex, setFocusedIndex] = useState(-1)
 
     // Image Upload State
     const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -125,7 +126,7 @@ export default function ProductsPage() {
 
     const handleScanResult = async (code: string) => {
         try {
-            const res = await api.get(`/products/barcode/${code.trim()}`)
+            const res = await api.get(`/ products / barcode / ${code.trim()} `)
             if (res.data) {
                 const productInfo = Array.isArray(res.data) ? res.data[0] : res.data
                 if (productInfo) {
@@ -169,10 +170,41 @@ export default function ProductsPage() {
     useEffect(() => {
         const timeout = setTimeout(() => {
             setPage(1)
+            setFocusedIndex(-1)
             fetchProducts(1)
         }, 300)
         return () => clearTimeout(timeout)
     }, [search])
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+        if (products.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setFocusedIndex(prev => (prev < products.length - 1 ? prev + 1 : prev))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev))
+        } else if (e.key === 'Enter') {
+            if (focusedIndex >= 0) {
+                e.preventDefault()
+                openEdit(products[focusedIndex])
+            }
+        } else if (e.key === 'Escape') {
+            setFocusedIndex(-1)
+        }
+    }
+
+    const tableBodyRef = useRef<HTMLTableSectionElement>(null)
+
+    useEffect(() => {
+        if (focusedIndex >= 0 && tableBodyRef.current) {
+            const row = tableBodyRef.current.children[focusedIndex] as HTMLElement
+            if (row) {
+                row.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+            }
+        }
+    }, [focusedIndex])
 
     const openCreate = (initialBarcode: string = '') => {
         setEditingProduct(null)
@@ -257,7 +289,7 @@ export default function ProductsPage() {
             }
 
             if (editingProduct) {
-                await api.put(`/products/${editingProduct.id}`, payload)
+                await api.put(`/ products / ${editingProduct.id} `, payload)
             } else {
                 await api.post('/products/', payload)
             }
@@ -274,7 +306,7 @@ export default function ProductsPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/products/${id}`)
+            await api.delete(`/ products / ${id} `)
             setDeleteConfirm(null)
             toast.success('Produto excluído com sucesso')
             fetchProducts()
@@ -351,6 +383,7 @@ export default function ProductsPage() {
                     placeholder="Buscar por nome, código de barras ou SKU..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
                     className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
                 />
             </div>
@@ -415,11 +448,15 @@ export default function ProductsPage() {
                                     <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {products.map((p) => {
+                            <tbody ref={tableBodyRef} className="divide-y divide-gray-50">
+                                {products.map((p, index) => {
                                     const status = getStockStatus(p)
                                     return (
-                                        <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <tr
+                                            key={p.id}
+                                            className={`transition - colors ${focusedIndex === index ? 'bg-blue-50 border-l-4 border-blue-500 shadow-inner' : 'hover:bg-gray-50/50'} `}
+                                            onClick={() => openEdit(p)}
+                                        >
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
@@ -457,7 +494,7 @@ export default function ProductsPage() {
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${status.class}`}>
+                                                <span className={`px - 2 py - 0.5 rounded - full text - [10px] font - semibold ${status.class} `}>
                                                     {status.label}
                                                 </span>
                                             </td>
@@ -468,7 +505,7 @@ export default function ProductsPage() {
                                                             e.stopPropagation();
                                                             setOpenMenuId(openMenuId === p.id ? null : p.id);
                                                         }}
-                                                        className={`p-2.5 rounded-xl transition-all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                        className={`p - 2.5 rounded - xl transition - all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} `}
                                                     >
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
@@ -505,10 +542,10 @@ export default function ProductsPage() {
                                                 {i > 0 && arr[i - 1] !== p - 1 && <span className="text-gray-300 px-0.5">…</span>}
                                                 <button
                                                     onClick={() => fetchProducts(p)}
-                                                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${p === page
+                                                    className={`w - 8 h - 8 text - xs font - semibold rounded - lg transition - colors ${p === page
                                                         ? 'bg-blue-600 text-white shadow-sm'
                                                         : 'text-gray-500 hover:bg-gray-100'
-                                                        }`}
+                                                        } `}
                                                 >
                                                     {p}
                                                 </button>
@@ -734,7 +771,7 @@ export default function ProductsPage() {
                     onScan={async (code) => {
                         setCameraOpen(false)
                         try {
-                            const res = await api.get(`/products/barcode/${code.trim()}`)
+                            const res = await api.get(`/ products / barcode / ${code.trim()} `)
                             if (res.data) {
                                 // Se for array, pega o primeiro, senão usa o objeto direto
                                 const productInfo = Array.isArray(res.data) ? res.data[0] : res.data

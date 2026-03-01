@@ -24,6 +24,8 @@ export default function CategoriesPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
     const [form, setForm] = useState({ name: '', description: '' })
+    const [searchQuery, setSearchQuery] = useState('')
+    const [focusedIndex, setFocusedIndex] = useState(-1)
 
     // Reorder state
     const [isReordering, setIsReordering] = useState(false)
@@ -170,14 +172,67 @@ export default function CategoriesPage() {
         e.preventDefault()
     }
 
-    const displayList = isReordering ? reorderList : categories
+    const filteredCategories = categories.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+        if (filteredCategories.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setFocusedIndex(prev => (prev < filteredCategories.length - 1 ? prev + 1 : prev))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev))
+        } else if (e.key === 'Enter') {
+            if (focusedIndex >= 0) {
+                e.preventDefault()
+                navigate(`/categorias/${filteredCategories[focusedIndex].id}`)
+            }
+        } else if (e.key === 'Escape') {
+            setFocusedIndex(-1)
+        }
+    }
+
+    const gridRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (focusedIndex >= 0 && gridRef.current) {
+            const item = gridRef.current.children[focusedIndex] as HTMLElement
+            if (item) {
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+            }
+        }
+    }, [focusedIndex])
+
+    const displayList = isReordering ? reorderList : filteredCategories
 
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900">Categorias</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</p>
+                    <div className="flex items-center gap-4 mt-1">
+                        <p className="text-sm text-gray-400">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</p>
+                        {!isReordering && (
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar categoria..."
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value)
+                                        setFocusedIndex(-1)
+                                    }}
+                                    onKeyDown={handleSearchKeyDown}
+                                    className="h-8 pl-8 pr-3 text-xs bg-slate-100 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:bg-white w-48 transition-all"
+                                />
+                                <Tags className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     {!isReordering ? (
@@ -275,9 +330,13 @@ export default function CategoriesPage() {
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {displayList.map(c => (
-                        <div key={c.id} onClick={() => navigate(`/categorias/${c.id}`)} className="bg-white rounded-xl border border-gray-100 p-6 hover:shadow-md transition-shadow group cursor-pointer flex flex-col items-center text-center relative">
+                <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {displayList.map((c, index) => (
+                        <div
+                            key={c.id}
+                            onClick={() => navigate(`/categorias/${c.id}`)}
+                            className={`bg-white rounded-xl border p-6 hover:shadow-md transition-all group cursor-pointer flex flex-col items-center text-center relative ${focusedIndex === index ? 'ring-2 ring-brand-500 border-brand-500 shadow-lg scale-[1.02] bg-brand-50/10' : 'border-gray-100'}`}
+                        >
                             <div className="absolute right-2 top-2" onClick={(e) => e.stopPropagation()}>
                                 <div className="relative">
                                     <button

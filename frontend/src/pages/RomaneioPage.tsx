@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
@@ -74,7 +74,13 @@ export default function RomaneioPage() {
     // Busca de Clientes
     const [dropdownClients, setDropdownClients] = useState<ClientResult[]>([])
     const [isSearchingClient, setIsSearchingClient] = useState(false)
+    const clientSearchContainerRef = useRef<HTMLDivElement>(null)
+    const productSearchContainerRef = useRef<HTMLDivElement>(null)
     const [showClientDropdown, setShowClientDropdown] = useState(false)
+    const [activeClientIndex, setActiveClientIndex] = useState(-1)
+    const [activeProductIndex, setActiveProductIndex] = useState(-1)
+    const clientListRef = useRef<HTMLDivElement>(null)
+    const productListRef = useRef<HTMLDivElement>(null)
     const [clientModalOpen, setClientModalOpen] = useState(false)
 
     const [movements, setMovements] = useState<any[]>([])
@@ -99,6 +105,22 @@ export default function RomaneioPage() {
         ({ currentLocation, nextLocation }) =>
             cartItems.length > 0 && currentLocation.pathname !== nextLocation.pathname
     );
+
+    // Fechar dropdowns ao clicar fora
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (clientSearchContainerRef.current && !clientSearchContainerRef.current.contains(event.target as Node)) {
+                setShowClientDropdown(false)
+                setActiveClientIndex(-1)
+            }
+            if (productSearchContainerRef.current && !productSearchContainerRef.current.contains(event.target as Node)) {
+                setDropdownResults([])
+                setActiveProductIndex(-1)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     // Agrupamento de Movimentações para permitir Re-gerar Romaneios
     const groupedMovements = useMemo(() => {
@@ -158,6 +180,126 @@ export default function RomaneioPage() {
     // Filtros e Paginação do Estoque
     const [estoqueSearch, setEstoqueSearch] = useState('')
     const [estoquePage, setEstoquePage] = useState(1)
+    const handleSearchClient = async (query: string) => {
+        setCustomerName(query)
+        // Fechar o outro dropdown se este for aberto
+        setDropdownResults([])
+        setActiveProductIndex(-1)
+
+        if (query.length < 2) {
+            setDropdownClients([])
+            setShowClientDropdown(false)
+            setActiveClientIndex(-1)
+            return
+        }
+        setIsSearchingClient(true)
+        try {
+            const res = await api.get('/clients/', { params: { search: query, per_page: 5 } })
+            setDropdownClients(res.data.items)
+            setShowClientDropdown(true)
+            setActiveClientIndex(res.data.items.length > 0 ? 0 : -1)
+        } catch (err) {
+            console.error('Erro ao buscar clientes:', err)
+        } finally {
+            setIsSearchingClient(false)
+        }
+    }
+
+    const handleBarcodeSearch = async (val: string) => {
+        setBarcodeInput(val)
+        // Fechar o outro dropdown se este for aberto
+        setShowClientDropdown(false)
+        setActiveClientIndex(-1)
+
+        if (val.trim().length < 2) {
+            setDropdownResults([])
+            setActiveProductIndex(-1)
+            return
+        }
+        setIsSearchingText(true)
+        try {
+            const res = await api.get('/products/', { params: { search: val, per_page: 5 } })
+            setDropdownResults(res.data.items)
+            setActiveProductIndex(res.data.items.length > 0 ? 0 : -1)
+        } catch (err) {
+            console.error('Erro ao buscar produtos:', err)
+        } finally {
+            setIsSearchingText(false)
+        }
+    }
+
+    const selectClient = (client: ClientResult) => {
+        setSelectedClientId(client.id)
+        setCustomerName(client.name)
+        setCustomerPhone(client.phone)
+        setShowClientDropdown(false)
+        setActiveClientIndex(-1)
+    }
+
+    const handleClientKeyDown = (e: React.KeyboardEvent) => {
+        if (!showClientDropdown || dropdownClients.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setActiveClientIndex(prev => (prev < dropdownClients.length - 1 ? prev + 1 : prev))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setActiveClientIndex(prev => (prev > 0 ? prev - 1 : prev))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (activeClientIndex >= 0) {
+                selectClient(dropdownClients[activeClientIndex])
+            }
+        } else if (e.key === 'Escape') {
+            setShowClientDropdown(false)
+            setActiveClientIndex(-1)
+        }
+    }
+
+    const handleProductKeyDown = (e: React.KeyboardEvent) => {
+        if (dropdownResults.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setActiveProductIndex(prev => (prev < dropdownResults.length - 1 ? prev + 1 : prev))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setActiveProductIndex(prev => (prev > 0 ? prev - 1 : prev))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (activeProductIndex >= 0) {
+                addToCart(dropdownResults[activeProductIndex])
+                setBarcodeInput('')
+                setDropdownResults([])
+                setActiveProductIndex(-1)
+            }
+        } else if (e.key === 'Escape') {
+            setDropdownResults([])
+            setActiveProductIndex(-1)
+        }
+    }
+    // Efeito para scroll automático no dropdown de clientes
+    useEffect(() => {
+        if (activeClientIndex >= 0 && clientListRef.current) {
+            const list = clientListRef.current
+            const item = list.children[activeClientIndex] as HTMLElement
+            if (item) {
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+            }
+        }
+    }, [activeClientIndex])
+
+    // Efeito para scroll automático no dropdown de produtos
+    useEffect(() => {
+        if (activeProductIndex >= 0 && productListRef.current) {
+            const list = productListRef.current
+            const item = list.children[activeProductIndex] as HTMLElement
+            if (item) {
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+            }
+        }
+    }, [activeProductIndex])
+
     const ESTOQUE_PER_PAGE = 20
 
     const fetchMovements = async () => {
@@ -215,43 +357,25 @@ export default function RomaneioPage() {
 
     // Busca Esperta: Autocomplete em tempo real ao digitar
     useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (barcodeInput.trim().length >= 2) {
-                setIsSearchingText(true)
-                try {
-                    const res = await api.get('/products/', { params: { search: barcodeInput.trim() } })
-                    setDropdownResults(res.data.items || res.data)
-                } catch {
-                    setDropdownResults([])
-                } finally {
-                    setIsSearchingText(false)
-                }
-            } else {
-                setDropdownResults([])
-            }
+        const timer = setTimeout(() => {
+            handleBarcodeSearch(barcodeInput.trim())
         }, 400)
         return () => clearTimeout(timer)
     }, [barcodeInput])
 
     // Busca Esperta para Clientes
     useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (customerName.trim().length >= 2 && showClientDropdown) {
-                setIsSearchingClient(true)
-                try {
-                    const res = await api.get('/clients/', { params: { search: customerName.trim(), limit: 5 } })
-                    setDropdownClients(res.data.items || [])
-                } catch {
-                    setDropdownClients([])
-                } finally {
-                    setIsSearchingClient(false)
-                }
-            } else {
+        const timer = setTimeout(() => {
+            if (customerName.trim().length >= 2) { // Removed showClientDropdown from condition as it's set by handleSearchClient
+                handleSearchClient(customerName.trim())
+            } else if (customerName.trim().length < 2) {
                 setDropdownClients([])
+                setShowClientDropdown(false)
+                setActiveClientIndex(-1)
             }
         }, 400)
         return () => clearTimeout(timer)
-    }, [customerName, showClientDropdown])
+    }, [customerName])
 
     // Suporte para Scanner USB (Bip) Global
     useEffect(() => {
@@ -345,7 +469,7 @@ export default function RomaneioPage() {
                 if (navigator.vibrate) navigator.vibrate(100)
             } else if (items.length > 1) {
                 // Se encontrar múltiplos, vamos adicionar todos ao dropdown logic ou lidar com alert
-                // No caso do romaneio a Busca Esperta já faz esse trabalho. 
+                // No caso do romaneio a Busca Esperta já faz esse trabalho.
                 // Então apenas avisamos
                 setCameraOpen(false)
                 toast.error(`CÓDIGO LIDO: ${code}\nEncontramos múltiplos produtos para esta busca. Por favor, digite o nome no campo para escolher a variação correta.`, { duration: 6000 })
@@ -359,13 +483,6 @@ export default function RomaneioPage() {
         }
     }
 
-    const handleBarcodeKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && barcodeInput.trim()) {
-            handleBarcodeScan(barcodeInput)
-            setBarcodeInput('')
-            setDropdownResults([])
-        }
-    }
 
     const handleFinalizeRomaneio = async () => {
         if (cartItems.length === 0) return
@@ -586,103 +703,125 @@ export default function RomaneioPage() {
                                 Montar Romaneio
                             </h2>
 
-                            <div className="mb-4 relative">
-                                <div className="flex justify-between items-end mb-1.5 ml-1">
-                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cliente / Destino</label>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setClientModalOpen(true)}
-                                            className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition-colors uppercase tracking-wider"
-                                            title="Cadastrar novo cliente agora"
-                                        >
-                                            + Novo Cliente
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="relative">
-                                    <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                                    <input
-                                        type="text"
-                                        placeholder="Digite o nome do cliente para buscar..."
-                                        value={customerName}
-                                        onChange={(e) => {
-                                            setCustomerName(e.target.value)
-                                            setShowClientDropdown(true)
-                                        }}
-                                        onFocus={() => {
-                                            if (customerName.trim().length >= 2) setShowClientDropdown(true)
-                                        }}
-                                        onBlur={() => {
-                                            // Delay para permitir o clique no dropdown
-                                            setTimeout(() => setShowClientDropdown(false), 200)
-                                        }}
-                                        className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 text-gray-900 font-semibold"
-                                    />
-
-                                    {/* Dropdown de Clientes */}
-                                    {showClientDropdown && (dropdownClients.length > 0 || isSearchingClient) && customerName.trim().length >= 2 && (
-                                        <div className="absolute z-40 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1">
-                                            {isSearchingClient ? (
-                                                <div className="p-4 text-center text-sm text-gray-400 font-medium animate-pulse">Buscando clientes...</div>
-                                            ) : dropdownClients.map(c => (
-                                                <button
-                                                    key={c.id}
-                                                    onClick={() => {
-                                                        const docInfo = c.document ? ` - CPF/CNPJ: ${c.document}` : ''
-                                                        setCustomerName(`${c.name}${docInfo}`)
-                                                        setSelectedClientId(c.id)
-                                                        setCustomerPhone(c.phone)
-                                                        setShowClientDropdown(false)
-                                                    }}
-                                                    className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex flex-col"
-                                                >
-                                                    <span className="text-sm font-bold text-gray-900">{c.name}</span>
-                                                    {c.document && <span className="text-[10px] text-gray-400 font-mono mt-0.5">{c.document}</span>}
-                                                </button>
-                                            ))}
+                            <div className="space-y-4">
+                                <div ref={clientSearchContainerRef} className="relative">
+                                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Cliente / Destino</label>
+                                    <div className="flex justify-between items-end mb-1.5 ml-1">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setClientModalOpen(true)}
+                                                className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition-colors uppercase tracking-wider"
+                                                title="Cadastrar novo cliente agora"
+                                            >
+                                                + Novo Cliente
+                                            </button>
                                         </div>
-                                    )}
+                                    </div>
+                                    <div className="relative">
+                                        <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                        <input
+                                            type="text"
+                                            placeholder="Digite o nome do cliente para buscar..."
+                                            value={customerName}
+                                            onChange={(e) => {
+                                                handleSearchClient(e.target.value)
+                                            }}
+                                            onFocus={() => {
+                                                // Fechar o outro dropdown
+                                                setDropdownResults([])
+                                                setActiveProductIndex(-1)
+
+                                                if (customerName.trim().length >= 2) handleSearchClient(customerName.trim())
+                                                else setShowClientDropdown(true)
+                                            }}
+                                            onKeyDown={handleClientKeyDown}
+                                            onBlur={() => {
+                                                // Delay para permitir o clique no dropdown
+                                                setTimeout(() => setShowClientDropdown(false), 200)
+                                            }}
+                                            className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 text-gray-900 font-semibold"
+                                        />
+
+                                        {/* Dropdown de Clientes */}
+                                        {showClientDropdown && (dropdownClients.length > 0 || isSearchingClient) && customerName.trim().length >= 2 && (
+                                            <div
+                                                ref={clientListRef}
+                                                className="absolute z-40 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1"
+                                            >
+                                                {isSearchingClient ? (
+                                                    <div className="p-4 text-center text-sm text-gray-400 font-medium animate-pulse">Buscando clientes...</div>
+                                                ) : dropdownClients.map((client, index) => (
+                                                    <button
+                                                        key={client.id}
+                                                        type="button"
+                                                        onClick={() => selectClient(client)}
+                                                        className={`w-full px-5 py-4 text-left hover:bg-slate-50 flex items-center justify-between group transition-colors ${activeClientIndex === index ? 'bg-slate-50 border-l-4 border-brand-500' : ''}`}
+                                                    >
+                                                        <div className="min-w-0 pr-4">
+                                                            <p className="text-sm font-bold text-gray-900 truncate">{client.name}</p>
+                                                            {client.document && <p className="text-[10px] text-gray-400 font-mono truncate">{client.document}</p>}
+                                                        </div>
+                                                        {client.phone && (
+                                                            <div className="flex items-center gap-1 text-xs text-gray-400 group-hover:text-gray-600 transition-colors shrink-0">
+                                                                <Smartphone className="w-3 h-3" />
+                                                                <span>{client.phone}</span>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Barcode Input */}
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Adicionar Produto</label>
+                            <div ref={productSearchContainerRef} className="relative">
+                                <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Adicionar Produto</label>
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">
                                         <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                                         <input
                                             type="text"
-                                            placeholder="Bipe o código ou digite o nome..."
+                                            placeholder="Busca esperta (Nome, Código, SKU...)"
                                             value={barcodeInput}
                                             onChange={(e) => setBarcodeInput(e.target.value)}
-                                            onKeyDown={handleBarcodeKeyDown}
+                                            onFocus={() => {
+                                                // Fechar o outro dropdown
+                                                setShowClientDropdown(false)
+                                                setActiveClientIndex(-1)
+                                            }}
+                                            onKeyDown={handleProductKeyDown}
                                             autoFocus
                                             className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-400 font-medium"
                                         />
 
                                         {/* Dropdown de Busca Esperta */}
                                         {(dropdownResults.length > 0 || isSearchingText) && barcodeInput.trim().length >= 2 && (
-                                            <div className="absolute z-50 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1">
+                                            <div
+                                                ref={productListRef}
+                                                className="absolute z-50 top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1"
+                                            >
                                                 {isSearchingText ? (
                                                     <div className="p-4 text-center text-sm text-gray-400 font-medium animate-pulse">Buscando produto...</div>
-                                                ) : dropdownResults.map(p => (
+                                                ) : dropdownResults.map((product, index) => (
                                                     <button
-                                                        key={p.id}
+                                                        key={product.id}
+                                                        type="button"
                                                         onClick={() => {
-                                                            addToCart(p)
+                                                            addToCart(product)
                                                             setBarcodeInput('')
                                                             setDropdownResults([])
                                                         }}
-                                                        className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between"
+                                                        className={`w-full px-5 py-3 text-left hover:bg-slate-50 flex items-center gap-4 transition-colors ${activeProductIndex === index ? 'bg-slate-50 border-l-4 border-brand-500' : ''}`}
                                                     >
                                                         <div className="min-w-0 pr-4">
-                                                            <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-                                                            <p className="text-[10px] text-gray-400 font-mono truncate">{p.barcode || p.sku || 'Sem Cód.'}</p>
+                                                            <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
+                                                            <p className="text-[10px] text-gray-400 font-mono truncate">{product.barcode || product.sku || 'Sem Cód.'}</p>
                                                         </div>
                                                         <div className="text-right shrink-0">
-                                                            <p className="text-xs font-bold text-gray-700">{p.stock_quantity}</p>
-                                                            <p className="text-[10px] text-gray-300 font-medium uppercase">{p.unit}</p>
+                                                            <p className="text-xs font-bold text-gray-700">{product.stock_quantity}</p>
+                                                            <p className="text-[10px] text-gray-300 font-medium uppercase">{product.unit}</p>
                                                         </div>
                                                     </button>
                                                 ))}
