@@ -53,7 +53,7 @@ def get_product_by_sku(db: Session, sku: str):
 
 
 def create_product(db: Session, product: ProductCreate):
-    from backend.models.inventory import InventoryMovement
+    from backend.models.inventory import InventoryMovement, MovementType
     db_product = Product(**product.model_dump())
     db.add(db_product)
     db.commit()
@@ -64,7 +64,7 @@ def create_product(db: Session, product: ProductCreate):
         initial_movement = InventoryMovement(
             product_id=db_product.id,
             quantity=db_product.stock_quantity,
-            movement_type='IN',
+            movement_type=MovementType.IN,
             notes='Estoque Inicial (Cadastro)',
             product_name_snapshot=db_product.name,
             product_barcode_snapshot=db_product.barcode,
@@ -78,12 +78,36 @@ def create_product(db: Session, product: ProductCreate):
 
 
 def update_product(db: Session, product_id: int, product: ProductUpdate):
+    from backend.models.inventory import InventoryMovement, MovementType
     db_product = db.query(Product).filter(Product.id == product_id).first()
     if not db_product:
         return None
+    
+    old_stock = db_product.stock_quantity
     update_data = product.model_dump(exclude_unset=True)
+    
     for key, value in update_data.items():
         setattr(db_product, key, value)
+    
+    new_stock = db_product.stock_quantity
+
+    # Se o estoque mudou, registra a movimentação
+    if old_stock != new_stock:
+        diff = new_stock - old_stock
+        mov_type = MovementType.IN if diff > 0 else MovementType.OUT
+        
+        movement = InventoryMovement(
+            product_id=db_product.id,
+            quantity=abs(diff),
+            movement_type=mov_type,
+            notes='Ajuste de Estoque (Edição)',
+            product_name_snapshot=db_product.name,
+            product_barcode_snapshot=db_product.barcode,
+            unit_price_snapshot=db_product.price,
+            unit_snapshot=db_product.unit
+        )
+        db.add(movement)
+
     db.commit()
     db.refresh(db_product)
     return db_product
