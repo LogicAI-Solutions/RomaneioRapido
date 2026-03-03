@@ -37,3 +37,7 @@ class InventoryMovement(Base):
         if self.product_name_snapshot and self.product_name_snapshot.strip():
             return self.product_name_snapshot
         return self.product.name if self.product else "Produto Excluído"
+
+    @property
+    def product_image(self):
+        return self.product.image_base64 if self.product else None

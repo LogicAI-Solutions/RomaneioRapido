@@ -34,7 +34,12 @@ class InventoryMovementResponse(InventoryMovementBase):
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
     product_name: Optional[str] = None
+    product_image: Optional[str] = None
     client: Optional[ClientInfo] = None
+
+    @property
+    def product_image(self) -> Optional[str]:
+        return self.product.image_base64 if self.product else None
 
     model_config = ConfigDict(from_attributes=True)
 

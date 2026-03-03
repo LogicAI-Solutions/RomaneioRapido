@@ -43,8 +43,12 @@ export default function MovementDetailsModal({ customerName, items, createdAt, o
                         {items.map((item, idx) => (
                             <div key={idx} className="flex items-start justify-between gap-4 group">
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:bg-brand-50 group-hover:border-brand-100 transition-colors">
-                                        <ShoppingBag className="w-5 h-5 text-slate-400 group-hover:text-brand-600" />
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:bg-brand-50 group-hover:border-brand-100 transition-colors overflow-hidden shadow-sm">
+                                        {item.image ? (
+                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ShoppingBag className="w-5 h-5 text-slate-400 group-hover:text-brand-600" />
+                                        )}
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-900 text-sm leading-tight">{item.name}</p>

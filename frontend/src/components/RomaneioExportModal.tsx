@@ -8,6 +8,7 @@ export interface CartItem {
     quantity: number
     unit: string
     price: number
+    image?: string | null
 }
 
 interface RomaneioExportModalProps {
@@ -16,10 +17,11 @@ interface RomaneioExportModalProps {
     customerPhone: string | null
     items: CartItem[]
     createdAt?: string | null
+    title?: string
     onClose: () => void
 }
 
-export default function RomaneioExportModal({ isOpen, customerName, customerPhone, items, createdAt, onClose }: RomaneioExportModalProps) {
+export default function RomaneioExportModal({ isOpen, customerName, customerPhone, items, createdAt, title, onClose }: RomaneioExportModalProps) {
     if (!isOpen) return null
     const { user } = useAuth()
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
@@ -225,7 +227,7 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
             <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">Romaneio Finalizado! 🎉</h2>
+                        <h2 className="text-lg font-bold text-gray-900">{title || "Romaneio Finalizado! 🎉"}</h2>
                         <p className="text-sm text-gray-500 mt-1">Escolha como deseja exportar a lista</p>
                     </div>
                     <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-700 rounded-full transition-colors">
