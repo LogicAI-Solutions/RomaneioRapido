@@ -68,6 +68,9 @@ elif _is_production:
 else:
     _allowed_hosts = ["localhost", "127.0.0.1", "backend"]
 
+if os.getenv("TESTING") == "1" and "testserver" not in _allowed_hosts:
+    _allowed_hosts.append("testserver")
+
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 
 # Rate Limiting
