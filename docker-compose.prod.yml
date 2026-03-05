@@ -1,11 +1,3 @@
-# docker-compose.prod.yml — Ambiente de Produção
-#
-# Apenas o frontend (Nginx) fica exposto na rede do host.
-# Backend e banco de dados ficam isolados na rede interna "internal".
-#
-# Uso:
-#   docker compose -f docker-compose.prod.yml up -d --build
-
 services:
 
   db:

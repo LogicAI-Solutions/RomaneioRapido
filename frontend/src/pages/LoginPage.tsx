@@ -53,7 +53,10 @@ export default function LoginPage() {
                 navigate('/dashboard')
             }
         } catch (err: any) {
-            const errorMessage = err.response?.data?.detail || (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.')
+            const detail = err.response?.data?.detail
+            const errorMessage = Array.isArray(detail)
+                ? detail.map((e: any) => e.msg).join('; ')
+                : (typeof detail === 'string' ? detail : (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.'))
             toast.error(errorMessage)
         } finally {
             setIsLoading(false)

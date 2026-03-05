@@ -26,7 +26,7 @@ configure_mappers()
 
 from backend.core.router_loader import include_routers
 
-if not os.getenv("TESTING"):
+if os.getenv("TESTING") != "1":
     database.Base.metadata.create_all(bind=database.engine)
     from backend.core.init_db import init_db
     init_db()
