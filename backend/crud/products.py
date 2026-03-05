@@ -3,6 +3,13 @@ from backend.models.products import Product
 from backend.schemas.products import ProductCreate, ProductUpdate
 
 
+# Colunas permitidas para ordenação — whitelist explícita para evitar inference attacks
+_ALLOWED_SORT_COLUMNS = {
+    "name", "price", "cost_price", "stock_quantity",
+    "min_stock", "sku", "barcode", "created_at", "updated_at",
+}
+
+
 def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = None, category_id: int = None, sort_by: str = "name", order: str = "asc"):
     query = db.query(Product).filter(Product.is_active == True)
     if search:
@@ -13,16 +20,14 @@ def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = Non
         )
     if category_id:
         query = query.filter(Product.category_id == category_id)
-    
-    # Dynamic Sorting
-    try:
-        column = getattr(Product, sort_by)
-        if order.lower() == "desc":
-            query = query.order_by(column.desc())
-        else:
-            query = query.order_by(column.asc())
-    except AttributeError:
-        query = query.order_by(Product.name.asc())
+
+    if sort_by not in _ALLOWED_SORT_COLUMNS:
+        sort_by = "name"
+    column = getattr(Product, sort_by)
+    if order.lower() == "desc":
+        query = query.order_by(column.desc())
+    else:
+        query = query.order_by(column.asc())
 
     return query.offset(skip).limit(limit).all()
 

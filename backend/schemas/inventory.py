@@ -1,19 +1,19 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Any, List
 from datetime import datetime
 from backend.models.inventory import MovementType
 
 
 class InventoryMovementBase(BaseModel):
-    product_id: int
-    quantity: float
+    product_id: int = Field(..., gt=0)
+    quantity: float = Field(..., gt=0, le=999_999_999)
     movement_type: MovementType
-    notes: Optional[str] = None
-    product_name_snapshot: Optional[str] = None
-    product_barcode_snapshot: Optional[str] = None
-    unit_price_snapshot: Optional[float] = None
-    unit_snapshot: Optional[str] = None
-    romaneio_id: Optional[str] = None
+    notes: Optional[str] = Field(None, max_length=1000)
+    product_name_snapshot: Optional[str] = Field(None, max_length=250)
+    product_barcode_snapshot: Optional[str] = Field(None, max_length=100)
+    unit_price_snapshot: Optional[float] = Field(None, ge=0)
+    unit_snapshot: Optional[str] = Field(None, max_length=20)
+    romaneio_id: Optional[str] = Field(None, max_length=100)
     client_id: Optional[int] = None
 
 

@@ -40,19 +40,19 @@ jobs:
             git reset --hard origin/main
             
             echo "🛑 Parando containers antigos..."
-            docker compose -f docker-compose.yml down --remove-orphans || true
+            docker compose -f docker-compose.prod.yml down --remove-orphans || true
             
             echo "🧹 Limpando imagens não utilizadas..."
             docker image prune -f || true
             
             echo "🔨 Buildando e iniciando containers..."
-            docker compose -f docker-compose.yml build --no-cache
-            docker compose -f docker-compose.yml up -d
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml up -d
             
             echo "⏳ Aguardando banco de dados..."
             sleep 10
             
             echo "✅ Verificando status dos containers..."
-            docker compose -f docker-compose.yml ps
+            docker compose -f docker-compose.prod.yml ps
             
             echo "🎉 Deploy concluído com sucesso!"

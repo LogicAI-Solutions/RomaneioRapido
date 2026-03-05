@@ -1,13 +1,13 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Optional
 from datetime import datetime
 
 class ClientBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=150)
-    phone: Optional[str] = None
-    document: Optional[str] = None
-    email: Optional[str] = None
-    notes: Optional[str] = None
+    phone: Optional[str] = Field(None, max_length=30)
+    document: Optional[str] = Field(None, max_length=30)
+    email: Optional[EmailStr] = None
+    notes: Optional[str] = Field(None, max_length=1000)
 
 class ClientCreate(ClientBase):
     pass

@@ -4,8 +4,10 @@ import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, message="'crypt' is deprecated")
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from backend.config.logger import get_dynamic_logger
@@ -29,28 +31,66 @@ if not os.getenv("TESTING"):
     from backend.core.init_db import init_db
     init_db()
 
+# Em produção (ENVIRONMENT=production) desativa /docs, /redoc e /openapi.json
+_is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+_docs_url     = None if _is_production else "/docs"
+_redoc_url    = None if _is_production else "/redoc"
+_openapi_url  = None if _is_production else "/openapi.json"
+
 app = FastAPI(
     title="RomaneioRapido API",
     description="API para gestão de estoque e inventário",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
 )
+
+_MAX_BODY_SIZE = int(os.getenv("MAX_BODY_SIZE_BYTES", 10 * 1024 * 1024))  # 10 MB
+
+class MaxBodySizeMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > _MAX_BODY_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Payload excede o limite máximo permitido.",
+            )
+        return await call_next(request)
+
+app.add_middleware(MaxBodySizeMiddleware)
+
+_allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
+if _allowed_hosts_env:
+    _allowed_hosts = [h.strip() for h in _allowed_hosts_env.split(",")]
+elif _is_production:
+    _allowed_hosts = ["romaneiorapido.com.br", "www.romaneiorapido.com.br"]
+else:
+    _allowed_hosts = ["localhost", "127.0.0.1", "backend"]
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 
 # Rate Limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# ── CORS ─────────────────────────────────────────────────────────────────────
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
     origins = [origin.strip() for origin in cors_origins_env.split(",")]
 else:
-    origins = ["*"]
+    if _is_production:
+        logger.warning("CORS_ORIGINS não definido em produção — bloqueando todas as origens externas.")
+        origins = [] 
+    else:
+        origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 @app.middleware("http")

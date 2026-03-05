@@ -1,0 +1,119 @@
+# docker-compose.prod.yml — Ambiente de Produção
+#
+# Apenas o frontend (Nginx) fica exposto na rede do host.
+# Backend e banco de dados ficam isolados na rede interna "internal".
+#
+# Uso:
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+
+  db:
+    image: postgres:15-alpine
+    container_name: romaneio_rapido_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    # Sem "ports" — não exposto ao host
+    # ── Hardening ────────────────────────────────────────────────────────────
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_READ_SEARCH      # necessário para pg_isready / leitura de dados
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: romaneio_rapido_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=production          # desativa /docs /redoc /openapi.json
+      - CORS_ORIGINS=https://romaneiorapido.com.br,https://www.romaneiorapido.com.br
+    command: uvicorn backend.server:app --host 0.0.0.0 --port 8002 --workers 4
+    # Sem "ports" — acessível apenas pelo Nginx via rede interna
+    networks:
+      - internal
+    # ── Hardening ────────────────────────────────────────────────────────────
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # filesystem somente-leitura; pastas que precisam de escrita via tmpfs
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /app/uploads:size=256m,mode=0755
+      - /app/.log:size=64m,mode=0755
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512M
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.prod
+    container_name: romaneio_rapido_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "${PORT_FRONTEND:-80}:80"
+    networks:
+      - internal
+    # ── Hardening ────────────────────────────────────────────────────────────
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE     # permite bind na porta 80
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /var/cache/nginx:size=32m,mode=0755
+      - /var/run:size=8m,mode=0755
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+volumes:
+  postgres_data:
+
+networks:
+  internal:
+    driver: bridge
+    internal: false   # false = frontend pode receber tráfego externo via "ports"
+
