@@ -27,7 +27,11 @@ configure_mappers()
 from backend.core.router_loader import include_routers
 
 if os.getenv("TESTING") != "1":
-    database.Base.metadata.create_all(bind=database.engine)
+    from backend.models.inventory import MovementType as _MT
+    from sqlalchemy import Enum as _SAEnum
+    _mt_enum = _SAEnum(_MT, name="movementtype")
+    _mt_enum.create(bind=database.engine, checkfirst=True)
+    database.Base.metadata.create_all(bind=database.engine, checkfirst=True)
     from backend.core.init_db import init_db
     init_db()
 

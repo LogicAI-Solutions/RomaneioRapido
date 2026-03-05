@@ -17,7 +17,7 @@ class InventoryMovement(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Float, nullable=False)
-    movement_type = Column(Enum(MovementType), nullable=False)
+    movement_type = Column(Enum(MovementType, name="movementtype", create_type=False), nullable=False)
     notes = Column(String, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=True, index=True)
