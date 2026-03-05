@@ -39,9 +39,10 @@ export default function LandingPage() {
 
                     <div className="hidden md:flex items-center gap-8">
                         <nav className="flex gap-6 text-[13px] font-medium text-gray-500">
-                            <a href="#solucao" className="hover:text-gray-900 transition-colors">Solução</a>
-                            <a href="#recursos" className="hover:text-gray-900 transition-colors">Recursos</a>
-                            <a href="#contato" className="hover:text-gray-900 transition-colors">Contato</a>
+                            <a href="#solucao" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Solução</a>
+                            <a href="#recursos" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Recursos</a>
+                            <a href="#planos" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Planos</a>
+                            <a href="#contato" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Contato</a>
                         </nav>
                         <button
                             onClick={() => navigate('/login')}
@@ -51,27 +52,28 @@ export default function LandingPage() {
                         </button>
                         <button
                             onClick={() => navigate('/login')}
-                            className="h-9 px-5 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                            className="h-9 px-5 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-sm"
                         >
                             Experimentar
                         </button>
                     </div>
 
-                    <button className="md:hidden p-1.5 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                    <button className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                         {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
                 </div>
 
                 {isMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-gray-100 px-5 py-4 space-y-3">
+                    <div className="md:hidden bg-white border-t border-gray-100 px-5 py-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                         <nav className="flex flex-col gap-3 text-sm font-medium text-gray-600">
-                            <a href="#solucao" onClick={() => setIsMenuOpen(false)}>Solução</a>
-                            <a href="#recursos" onClick={() => setIsMenuOpen(false)}>Recursos</a>
-                            <a href="#contato" onClick={() => setIsMenuOpen(false)}>Contato</a>
+                            <a href="#solucao" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Solução</a>
+                            <a href="#recursos" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Recursos</a>
+                            <a href="#planos" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Planos</a>
+                            <a href="#contato" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Contato</a>
                         </nav>
                         <div className="flex gap-3 pt-2">
-                            <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-medium border border-gray-200 rounded-lg text-gray-700">Login</button>
-                            <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg">Experimentar</button>
+                            <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-medium border border-gray-200 rounded-lg text-gray-700 active:bg-gray-50 transition-colors">Login</button>
+                            <button onClick={() => navigate('/cadastro')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg active:scale-95 transition-all">Experimentar</button>
                         </div>
                     </div>
                 )}
@@ -83,60 +85,60 @@ export default function LandingPage() {
                     <div className="max-w-6xl mx-auto px-5">
                         <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
                             {/* Texto */}
-                            <div>
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-6">
-                                    <Star className="w-3 h-3 fill-blue-600" />
+                            <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-6 animate-in fade-in zoom-in-95 duration-1000 delay-300 fill-mode-both hover:-translate-y-1 transition-transform cursor-default">
+                                    <Star className="w-3 h-3 fill-blue-600 animate-pulse" />
                                     Sistema ERP para Estoque
                                 </div>
 
                                 <h1 className="text-4xl md:text-[3.25rem] font-extrabold text-gray-900 leading-[1.15] mb-5 tracking-tight">
                                     Gerencie seu estoque
                                     <br />
-                                    <span className="text-blue-600">sem complicação</span>
+                                    <span className="text-blue-600 inline-block animate-in fade-in slide-in-from-left-4 duration-1000 delay-500 fill-mode-both">sem complicação</span>
                                 </h1>
 
-                                <p className="text-gray-500 text-lg leading-relaxed mb-8 max-w-md">
+                                <p className="text-gray-500 text-lg leading-relaxed mb-8 max-w-md animate-in fade-in duration-1000 delay-700 fill-mode-both">
                                     Controle total do inventário com leitura de código de barras,
                                     interface rápida como planilha e relatórios em tempo real.
                                 </p>
 
-                                <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                                <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-1000 fill-mode-both">
                                     <button
                                         onClick={() => navigate('/login')}
-                                        className="h-12 px-7 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                                        className="group h-12 px-7 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 hover:scale-105 transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2"
                                     >
-                                        Acessar Sistema <ArrowRight className="w-4 h-4" />
+                                        Acessar Sistema <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                     <a
-                                        href="#solucao"
-                                        className="h-12 px-7 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                        href="#planos"
+                                        className="h-12 px-7 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-200 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
                                     >
-                                        Saiba mais
+                                        Ver Planos e Preços
                                     </a>
                                 </div>
 
-                                <div className="flex items-center gap-6 text-xs text-gray-400 font-medium">
-                                    <span className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div> 100% Web
+                                <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium animate-in fade-in duration-1000 delay-1000 fill-mode-both">
+                                    <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div> 100% Web
                                     </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div> Sem instalação
+                                    <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse delay-75"></div> Sem instalação
                                     </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div> Código de barras
+                                    <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse delay-150"></div> Código de barras
                                     </span>
                                 </div>
                             </div>
 
                             {/* Mockup Visual - Mais Premium */}
-                            <div className="relative group">
+                            <div className="relative group animate-in fade-in zoom-in-95 duration-1000 delay-500 fill-mode-both">
                                 <div className="absolute -inset-10 bg-blue-500/10 rounded-full blur-[120px] -z-10 group-hover:bg-blue-500/20 transition-all duration-700"></div>
-                                <div className="bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border border-slate-800 transform group-hover:rotate-1 group-hover:scale-[1.02] transition-all duration-700">
+                                <div className="bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border border-slate-800 transform group-hover:rotate-1 group-hover:scale-[1.02] transition-all duration-700 hover:shadow-blue-500/20">
                                     <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
                                         {/* Interface Header */}
-                                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 hover:bg-gray-50 transition-colors">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-500">
                                                     <Package className="w-5 h-5 text-white" />
                                                 </div>
                                                 <div>
@@ -321,7 +323,7 @@ export default function LandingPage() {
                                     </div>
 
                                     <button
-                                        onClick={() => navigate('/login')}
+                                        onClick={() => navigate('/cadastro')}
                                         className={`w-full py-4 rounded-[10px] font-bold text-sm transition-all duration-200 mb-8 ${plan.highlight
                                             ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
                                             : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50'
@@ -363,7 +365,7 @@ export default function LandingPage() {
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                     <button
-                                        onClick={() => navigate('/login')}
+                                        onClick={() => navigate('/cadastro')}
                                         className="w-full sm:w-auto h-14 px-10 text-base font-black bg-blue-600 text-white rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/40 flex items-center justify-center gap-3 active:scale-95"
                                     >
                                         Começar Gratuitamente <ArrowRight className="w-5 h-5" />
