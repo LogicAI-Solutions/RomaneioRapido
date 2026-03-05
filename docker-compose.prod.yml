@@ -88,7 +88,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "${PORT_FRONTEND:-80}:80"
+      - "127.0.0.1:${PORT_FRONTEND:-8082}:80"
     networks:
       - internal
     # ── Hardening ────────────────────────────────────────────────────────────
