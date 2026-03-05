@@ -111,4 +111,3 @@ networks:
   internal:
     driver: bridge
     internal: false   # false = frontend pode receber tráfego externo via "ports"
-
