@@ -111,6 +111,26 @@ export default function ProfilePage() {
         }
     }, [user])
 
+    // Tratar retorno do Stripe Checkout
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+        const checkoutStatus = params.get('checkout')
+        if (checkoutStatus === 'success') {
+            toast.success('Assinatura realizada com sucesso! Seu plano será atualizado em instantes.')
+            setActiveTab('subscription')
+            window.history.replaceState({}, '', window.location.pathname)
+            // Recarregar dados de uso após breve delay (webhook pode demorar)
+            setTimeout(() => {
+                fetchUsageData()
+                window.location.reload()
+            }, 3000)
+        } else if (checkoutStatus === 'cancel') {
+            toast('Checkout cancelado.', { icon: '⚠️' })
+            setActiveTab('subscription')
+            window.history.replaceState({}, '', window.location.pathname)
+        }
+    }, [])
+
     const fetchUsageData = async () => {
         setIsLoadingUsage(true)
         try {
@@ -259,6 +279,13 @@ export default function ProfilePage() {
         if (planId === user?.plan_id) return
         setIsSubscribing(planId)
         try {
+            // Planos pagos: redirecionar para Stripe Checkout
+            if (['basic', 'plus', 'pro'].includes(planId)) {
+                const res = await api.post('/plans/checkout', { plan_id: planId })
+                window.location.href = res.data.checkout_url
+                return
+            }
+            // Fallback para planos sem pagamento
             await api.patch('/plans/subscribe', { plan_id: planId })
             toast.success('Plano atualizado com sucesso!')
             setTimeout(() => {
@@ -268,6 +295,15 @@ export default function ProfilePage() {
             toast.error(err.response?.data?.detail || 'Erro ao atualizar assinatura')
         } finally {
             setIsSubscribing(null)
+        }
+    }
+
+    const handleManageSubscription = async () => {
+        try {
+            const res = await api.post('/plans/portal')
+            window.location.href = res.data.portal_url
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao abrir portal de assinatura')
         }
     }
 
@@ -480,6 +516,19 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Botão Gerenciar Assinatura (Stripe Portal) */}
+                                    {user?.plan_id && !['trial'].includes(user.plan_id) && (
+                                        <div className="mt-6 flex justify-center md:justify-start">
+                                            <button
+                                                onClick={handleManageSubscription}
+                                                className="h-12 px-6 font-bold bg-slate-100 text-slate-700 rounded-2xl hover:bg-brand-600 hover:text-white transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                                            >
+                                                <CreditCard className="w-5 h-5" />
+                                                Gerenciar Assinatura
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Upgrades List */}
