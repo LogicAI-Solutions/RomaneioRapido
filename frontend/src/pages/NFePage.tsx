@@ -6,9 +6,10 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { Navigate } from 'react-router-dom'
-import { FileText, Plus, Printer, Send, X } from 'lucide-react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { AlertTriangle, FileText, Plus, Printer, Send, Settings2, X } from 'lucide-react'
 import LoadingOverlay from '@/components/LoadingOverlay'
+import ConfirmModal from '@/components/ConfirmModal'
 import DanfeDocument from '@/components/fiscal/DanfeDocument'
 import NFeDraftForm from '@/components/fiscal/NFeDraftForm'
 import { fiscalApi, type DanfeData, type NFeResponse } from '@/services/fiscal'
@@ -17,12 +18,16 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function NFePage() {
     const { user } = useAuth()
+    const navigate = useNavigate()
     const [items, setItems] = useState<NFeResponse[]>([])
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
     const [issuingId, setIssuingId] = useState<number | null>(null)
+    const [confirmNfe, setConfirmNfe] = useState<NFeResponse | null>(null)
     const [previewData, setPreviewData] = useState<DanfeData | null>(null)
     const [showForm, setShowForm] = useState(false)
+    const [hasFiscalConfig, setHasFiscalConfig] = useState<boolean | null>(null)
+    const [hasValidCertificate, setHasValidCertificate] = useState<boolean | null>(null)
 
     const refresh = async () => {
         try {
@@ -35,7 +40,18 @@ export default function NFePage() {
 
     useEffect(() => {
         ;(async () => {
-            await refresh()
+            try {
+                const [listResult, config, certificate] = await Promise.all([
+                    fiscalApi.listNFes({ per_page: 50 }),
+                    fiscalApi.getConfig(),
+                    fiscalApi.getCertificateStatus(),
+                ])
+                setItems(listResult.items)
+                setHasFiscalConfig(Boolean(config))
+                setHasValidCertificate(certificate.has_certificate && !certificate.is_expired)
+            } catch (err) {
+                toast.error(translateError((err as any)?.response?.data?.detail ?? err) || 'Erro ao carregar NF-e.')
+            }
             setLoading(false)
         })()
     }, [])
@@ -52,21 +68,62 @@ export default function NFePage() {
             setShowForm(false)
             await refresh()
         } catch (err) {
-            toast.error(translateError(err) || 'Falha ao criar rascunho.')
+            const detail = (err as any)?.response?.data?.detail
+            const status = (err as any)?.response?.status
+            const message = typeof detail === 'string' ? detail : translateError(detail ?? err)
+
+            if (status === 412 && String(message).toLowerCase().includes('configuração fiscal')) {
+                setHasFiscalConfig(false)
+                setShowForm(false)
+                toast.error('Cadastre a Configuração Fiscal antes de criar uma NF-e.')
+            } else {
+                toast.error(message || 'Falha ao criar rascunho.')
+            }
         } finally {
             setCreating(false)
         }
     }
 
-    const handleIssue = async (nfe: NFeResponse) => {
-        if (!confirm(`Emitir NF-e para ${nfe.destinatario_nome}? Esta ação envia o XML à SEFAZ.`)) return
+    const requestIssue = (nfe: NFeResponse) => {
+        if (!hasFiscalConfig) {
+            toast.error('Cadastre a Configuração Fiscal antes de emitir NF-e.')
+            navigate('/fiscal/configuracao')
+            return
+        }
+        if (!hasValidCertificate) {
+            toast.error('Envie um Certificado Digital A1 válido antes de emitir NF-e.')
+            navigate('/fiscal/configuracao')
+            return
+        }
+        setConfirmNfe(nfe)
+    }
+
+    const handleIssue = async () => {
+        const nfe = confirmNfe
+        if (!nfe) return
         try {
             setIssuingId(nfe.id)
             const issued = await fiscalApi.issue(nfe.id)
             toast.success(`NF-e ${issued.numero} autorizada.`)
+            setConfirmNfe(null)
             await refresh()
         } catch (err) {
-            toast.error(translateError(err) || 'Falha na transmissão à SEFAZ.')
+            const detail = (err as any)?.response?.data?.detail
+            const status = (err as any)?.response?.status
+            const message = typeof detail === 'string' ? detail : translateError(detail ?? err)
+
+            if (status === 412 && String(message).toLowerCase().includes('certificado')) {
+                setHasValidCertificate(false)
+                toast.error(message || 'Envie um Certificado Digital A1 válido antes de emitir NF-e.')
+                navigate('/fiscal/configuracao')
+            } else if (status === 412 && String(message).toLowerCase().includes('configuração fiscal')) {
+                setHasFiscalConfig(false)
+                toast.error(message || 'Cadastre a Configuração Fiscal antes de emitir NF-e.')
+                navigate('/fiscal/configuracao')
+            } else {
+                toast.error(message || 'Falha na transmissão à SEFAZ.')
+            }
+            setConfirmNfe(null)
         } finally {
             setIssuingId(null)
         }
@@ -115,16 +172,70 @@ export default function NFePage() {
                 </div>
                 <button
                     type="button"
-                    onClick={() => setShowForm((v) => !v)}
+                    onClick={() => {
+                        if (!hasFiscalConfig) {
+                            navigate('/fiscal/configuracao')
+                            return
+                        }
+                        setShowForm((v) => !v)
+                    }}
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition-colors"
                 >
-                    {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {showForm ? 'Fechar' : 'Nova NF-e'}
+                    {!hasFiscalConfig ? <Settings2 className="w-4 h-4" /> : showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    {!hasFiscalConfig ? 'Configurar emitente' : showForm ? 'Fechar' : 'Nova NF-e'}
                 </button>
             </header>
 
-            {showForm && (
+            {!hasFiscalConfig && (
+                <div className="border border-warning/30 bg-warning/10 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-warning/20 text-warning flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-bold text-text-primary">Configuração fiscal pendente</h2>
+                            <p className="text-sm text-text-secondary mt-1">
+                                Antes de criar rascunhos de NF-e, cadastre os dados do emitente na Configuração Fiscal.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/fiscal/configuracao')}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition-colors"
+                    >
+                        <Settings2 className="w-4 h-4" />
+                        Ir para Config. Fiscal
+                    </button>
+                </div>
+            )}
+
+            {hasFiscalConfig && showForm && (
                 <NFeDraftForm saving={creating} onSubmit={handleCreate} />
+            )}
+
+            {hasFiscalConfig && !hasValidCertificate && (
+                <div className="border border-warning/30 bg-warning/10 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-warning/20 text-warning flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-bold text-text-primary">Certificado A1 pendente</h2>
+                            <p className="text-sm text-text-secondary mt-1">
+                                Para emitir em homologação ou produção, envie um Certificado Digital A1 válido na Configuração Fiscal.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/fiscal/configuracao')}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition-colors"
+                    >
+                        <Settings2 className="w-4 h-4" />
+                        Enviar certificado
+                    </button>
+                </div>
             )}
 
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -166,7 +277,7 @@ export default function NFePage() {
                                     <div className="inline-flex gap-2">
                                         {(nfe.status === 'rascunho' || nfe.status === 'rejeitada') && (
                                             <button
-                                                onClick={() => handleIssue(nfe)}
+                                                onClick={() => requestIssue(nfe)}
                                                 disabled={issuingId === nfe.id}
                                                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold disabled:opacity-60"
                                             >
@@ -188,6 +299,22 @@ export default function NFePage() {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmNfe !== null}
+                onClose={() => setConfirmNfe(null)}
+                onConfirm={handleIssue}
+                loading={issuingId !== null}
+                type="warning"
+                title="Emitir NF-e?"
+                message={
+                    confirmNfe
+                        ? `A NF-e para ${confirmNfe.destinatario_nome} será assinada e transmitida à SEFAZ. Após autorizada, ela passa a ter validade fiscal e só poderá ser desfeita por cancelamento.`
+                        : ''
+                }
+                confirmText="Emitir e transmitir"
+                cancelText="Cancelar"
+            />
         </div>
     )
 }

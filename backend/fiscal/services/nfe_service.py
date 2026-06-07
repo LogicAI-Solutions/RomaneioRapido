@@ -27,6 +27,7 @@ from backend.fiscal.domain.exceptions import (
     FiscalValidationError,
     NFeNotFoundError,
     NFeStateError,
+    SefazError,
     SefazRejectedError,
 )
 from backend.fiscal.domain.value_objects import (
@@ -85,8 +86,13 @@ class NFeService:
         self._validate_itens(itens_data)
 
         valor_produtos = sum(
-            Decimal(str(i["quantidade"])) * Decimal(str(i["valor_unitario"]))
-            for i in itens_data
+            (
+                (Decimal(str(i["quantidade"])) * Decimal(str(i["valor_unitario"]))).quantize(
+                    Decimal("0.01")
+                )
+                for i in itens_data
+            ),
+            Decimal("0.00"),
         )
 
         nfe = NFe(
@@ -109,8 +115,8 @@ class NFeService:
             destinatario_email=destinatario_data.get("email"),
             destinatario_endereco=json.dumps(destinatario_data.get("endereco") or {}, ensure_ascii=False),
             informacoes_adicionais=payload.get("informacoes_adicionais"),
-            valor_produtos=float(valor_produtos),
-            valor_total=float(valor_produtos),
+            valor_produtos=valor_produtos,
+            valor_total=valor_produtos,
         )
 
         for idx, item in enumerate(itens_data, start=1):
@@ -126,9 +132,9 @@ class NFeService:
                     cfop=strip_non_digits(item["cfop"]),
                     unidade_comercial=item.get("unidade_comercial", "UN"),
                     ean=item.get("ean"),
-                    quantidade=float(qtd),
-                    valor_unitario=float(vunit),
-                    valor_total=float(total),
+                    quantidade=qtd,
+                    valor_unitario=vunit,
+                    valor_total=total,
                     csosn=item["csosn"],
                     origem=item.get("origem", "0"),
                     product_id=item.get("product_id"),
@@ -153,7 +159,13 @@ class NFeService:
             nfe.numero = numero
             nfe.serie = serie
 
-        dados = self._build_dados(nfe, config)
+        try:
+            dados = self._build_dados(nfe, config)
+        except (ValueError, KeyError) as exc:
+            # Dado persistido fora do domínio esperado (enum/JSON inválido):
+            # tratamos como erro de validação (422), nunca como 500.
+            raise FiscalValidationError(f"Dados fiscais inconsistentes: {exc}") from exc
+
         xml = self._builder.build(dados)
         xml_assinado = self._signer.sign(xml, material)
         nfe.xml_assinado = xml_assinado
@@ -175,6 +187,17 @@ class NFeService:
             nfe.motivo_rejeicao = exc.motivo
             self._repo.save(nfe)
             raise
+        except SefazError as exc:
+            # Falha de comunicação (rede/timeout): a NF-e PODE ter chegado à
+            # SEFAZ. Marcamos como ERRO (e não ASSINADA) para que uma nova
+            # tentativa seja permitida sem deixar a nota presa. O número fiscal
+            # já reservado é mantido em `nfe.numero` e reaproveitado no retry,
+            # evitando quebra de sequência. Idealmente, antes de reemitir,
+            # deve-se consultar a situação da chave na SEFAZ (consSitNFe).
+            nfe.status = NFeStatus.ERRO.value
+            nfe.motivo_rejeicao = str(exc)
+            self._repo.save(nfe)
+            raise
 
         nfe.status = NFeStatus.AUTORIZADA.value
         nfe.codigo_status_sefaz = resultado.status_codigo
@@ -182,6 +205,44 @@ class NFeService:
         nfe.chave_acesso = resultado.chave_acesso
         nfe.xml_autorizado = resultado.xml_autorizado
         nfe.data_autorizacao = resultado.data_autorizacao or datetime.now(timezone.utc)
+        return self._repo.save(nfe)
+
+    def cancel(self, user_id: int, nfe_id: int, justificativa: str) -> NFe:
+        """Cancela uma NF-e autorizada via evento de cancelamento na SEFAZ."""
+        nfe = self._repo.get(user_id, nfe_id)
+        if not nfe:
+            raise NFeNotFoundError("NF-e não encontrada.")
+
+        justificativa = self._validate_justificativa(justificativa)
+
+        if nfe.status != NFeStatus.AUTORIZADA.value:
+            raise NFeStateError(
+                f"Apenas NF-e autorizada pode ser cancelada (estado atual: '{nfe.status}')."
+            )
+        if not nfe.chave_acesso or not nfe.protocolo:
+            raise NFeStateError(
+                "NF-e autorizada sem chave de acesso ou protocolo; cancelamento indisponível."
+            )
+
+        config = self._cfg_service.require(user_id)
+        material = self._cert_service.load_material(user_id)
+
+        resultado = self._transmitter.cancelar(
+            chave=nfe.chave_acesso,
+            protocolo=nfe.protocolo,
+            justificativa=justificativa,
+            contexto=TransmissaoContext(
+                uf=config.uf,
+                ambiente=AmbienteSEFAZ(config.ambiente),
+                material=material,
+            ),
+        )
+
+        nfe.status = NFeStatus.CANCELADA.value
+        nfe.justificativa_cancelamento = justificativa
+        nfe.protocolo_cancelamento = resultado.protocolo
+        nfe.xml_cancelamento = resultado.xml_evento
+        nfe.data_cancelamento = resultado.data_evento or datetime.now(timezone.utc)
         return self._repo.save(nfe)
 
     # ── Queries ─────────────────────────────────────────────────────────────
@@ -198,6 +259,15 @@ class NFeService:
         return {"items": items, "total": total, "page": page, "per_page": per_page}
 
     # ── Helpers ─────────────────────────────────────────────────────────────
+    @staticmethod
+    def _validate_justificativa(justificativa: str) -> str:
+        texto = (justificativa or "").strip()
+        if not (15 <= len(texto) <= 255):
+            raise FiscalValidationError(
+                "A justificativa de cancelamento deve ter entre 15 e 255 caracteres."
+            )
+        return texto
+
     @staticmethod
     def _validate_destinatario(data: dict) -> None:
         doc = strip_non_digits(data.get("documento", ""))

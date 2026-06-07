@@ -117,3 +117,14 @@ class ResultadoTransmissao:
     chave_acesso: Optional[str] = None
     xml_autorizado: Optional[str] = None
     data_autorizacao: Optional[datetime] = None
+
+
+@dataclass(frozen=True)
+class ResultadoCancelamento:
+    """Resposta padronizada do evento de cancelamento (independente da lib)."""
+    sucesso: bool
+    status_codigo: str
+    status_motivo: str
+    protocolo: Optional[str] = None
+    xml_evento: Optional[str] = None
+    data_evento: Optional[datetime] = None

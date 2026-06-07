@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
 
     # Fiscal / NF-e
-    FISCAL_ENCRYPTION_KEY: Optional[str] = None  # Fernet key (base64 urlsafe). Se None, derivada de SECRET_KEY.
+    FISCAL_ENCRYPTION_KEY: Optional[str] = None  # Fernet key (base64 urlsafe, 32 bytes). OBRIGATÓRIA em produção; em dev, derivada do SECRET_KEY.
     SEFAZ_AMBIENTE: str = "homologacao"  # "homologacao" | "producao"
     SEFAZ_UF_PADRAO: str = "SP"
 

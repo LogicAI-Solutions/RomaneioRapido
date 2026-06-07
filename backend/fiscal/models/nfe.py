@@ -1,9 +1,17 @@
 """Entidades persistentes da NF-e e seus itens."""
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, Index
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Text, Index, text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 from backend.core.database import Base
+
+# Precisões alinhadas ao leiaute da NF-e 4.00: quantidade até 4 casas,
+# valor unitário até 10 casas, totais monetários com 2 casas. Usamos
+# Numeric (Decimal) — nunca Float — para não introduzir erro de arredondamento
+# que faria a soma do XML divergir e a SEFAZ rejeitar a nota.
+_QTD = Numeric(15, 4)
+_VALOR_UNIT = Numeric(21, 10)
+_MONEY = Numeric(15, 2)
 
 
 class NFe(Base):
@@ -30,6 +38,12 @@ class NFe(Base):
     motivo_rejeicao = Column(Text, nullable=True)
     codigo_status_sefaz = Column(String(10), nullable=True)
 
+    # Cancelamento (evento)
+    justificativa_cancelamento = Column(String(255), nullable=True)
+    protocolo_cancelamento = Column(String(20), nullable=True)
+    data_cancelamento = Column(DateTime(timezone=True), nullable=True)
+    xml_cancelamento = Column(Text, nullable=True)
+
     # Destinatário (snapshot — não pode mudar após emissão)
     destinatario_documento = Column(String(14), nullable=False)
     destinatario_nome = Column(String(150), nullable=False)
@@ -38,8 +52,8 @@ class NFe(Base):
     destinatario_endereco = Column(Text, nullable=True)  # JSON serializado
 
     # Totais
-    valor_produtos = Column(Float, nullable=False, default=0.0)
-    valor_total = Column(Float, nullable=False, default=0.0)
+    valor_produtos = Column(_MONEY, nullable=False, default=0)
+    valor_total = Column(_MONEY, nullable=False, default=0)
 
     # Documentos
     xml_assinado = Column(Text, nullable=True)
@@ -57,7 +71,17 @@ class NFe(Base):
 
     __table_args__ = (
         Index("ix_nfes_user_status", "user_id", "status"),
-        Index("ix_nfes_user_numero_serie", "user_id", "numero", "serie", unique=True),
+        # O número fiscal só é único depois de atribuído na emissão (numero > 0).
+        # Rascunhos nascem com numero=0 e não podem colidir entre si — por isso
+        # o índice é parcial.
+        Index(
+            "ix_nfes_user_numero_serie",
+            "user_id",
+            "serie",
+            "numero",
+            unique=True,
+            postgresql_where=text("numero > 0"),
+        ),
     )
 
 
@@ -75,9 +99,9 @@ class NFeItem(Base):
     cfop = Column(String(4), nullable=False)
     unidade_comercial = Column(String(6), nullable=False, default="UN")
     ean = Column(String(14), nullable=True)
-    quantidade = Column(Float, nullable=False, default=0.0)
-    valor_unitario = Column(Float, nullable=False, default=0.0)
-    valor_total = Column(Float, nullable=False, default=0.0)
+    quantidade = Column(_QTD, nullable=False, default=0)
+    valor_unitario = Column(_VALOR_UNIT, nullable=False, default=0)
+    valor_total = Column(_MONEY, nullable=False, default=0)
     csosn = Column(String(3), nullable=False, default="102")
     origem = Column(String(1), nullable=False, default="0")
 

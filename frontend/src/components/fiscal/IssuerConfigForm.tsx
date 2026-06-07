@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { CnpjInput, CepInput, IeInput } from '@/components/fiscal/MaskedInput'
+import InfoTooltip from '@/components/InfoTooltip'
 import { isValidCEP, isValidCNPJ, stripNonDigits } from '@/utils/masks'
 import type { FiscalConfig } from '@/services/fiscal'
 
@@ -107,25 +108,25 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <Section title="Dados da empresa">
-                <Field label="CNPJ *">
+                <Field label="CNPJ *" hint="Cadastro Nacional da Pessoa Jurídica do emitente (14 dígitos). Identifica sua empresa na NF-e e na SEFAZ.">
                     <CnpjInput value={form.cnpj} onChange={(_, raw) => update('cnpj', raw)} required />
                 </Field>
-                <Field label="Razão social *">
+                <Field label="Razão social *" hint="Nome empresarial registrado na Receita Federal, exatamente como consta no cartão CNPJ.">
                     <Input value={form.razao_social} onChange={(v) => update('razao_social', v)} required />
                 </Field>
-                <Field label="Nome fantasia">
+                <Field label="Nome fantasia" hint="Nome comercial da empresa. Opcional — se ficar vazio, usamos a razão social.">
                     <Input value={form.nome_fantasia ?? ''} onChange={(v) => update('nome_fantasia', v)} />
                 </Field>
-                <Field label="Inscrição estadual *">
+                <Field label="Inscrição estadual *" hint="Registro da empresa na Secretaria da Fazenda do estado (SEFAZ). Obrigatório para emitir NF-e de mercadoria.">
                     <IeInput value={form.inscricao_estadual} onChange={(_, raw) => update('inscricao_estadual', raw)} required />
                 </Field>
-                <Field label="Inscrição municipal">
+                <Field label="Inscrição municipal" hint="Registro da empresa na prefeitura. Necessário apenas para quem presta serviços (NFS-e).">
                     <Input value={form.inscricao_municipal ?? ''} onChange={(v) => update('inscricao_municipal', v)} />
                 </Field>
-                <Field label="CNAE fiscal">
+                <Field label="CNAE fiscal" hint="Código da atividade econômica principal da empresa, conforme o cartão CNPJ (somente números).">
                     <Input value={form.cnae_fiscal ?? ''} onChange={(v) => update('cnae_fiscal', v)} placeholder="Somente números" />
                 </Field>
-                <Field label="Regime tributário *">
+                <Field label="Regime tributário *" hint="Define como os impostos são calculados. Simples Nacional usa CSOSN nos itens; Regime Normal usa CST.">
                     <select
                         value={form.regime_tributario}
                         onChange={(e) => update('regime_tributario', e.target.value)}
@@ -140,40 +141,40 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
             </Section>
 
             <Section title="Endereço">
-                <Field label="CEP *">
+                <Field label="CEP *" hint="Código de Endereçamento Postal do estabelecimento emitente (8 dígitos).">
                     <CepInput value={form.cep} onChange={(_, raw) => update('cep', raw)} required />
                 </Field>
-                <Field label="Logradouro *">
+                <Field label="Logradouro *" hint="Nome da rua, avenida ou praça do endereço do emitente.">
                     <Input value={form.logradouro} onChange={(v) => update('logradouro', v)} required />
                 </Field>
-                <Field label="Número *">
+                <Field label="Número *" hint="Número do imóvel. Use S/N quando não houver número.">
                     <Input value={form.numero} onChange={(v) => update('numero', v)} required />
                 </Field>
-                <Field label="Complemento">
+                <Field label="Complemento" hint="Informação adicional do endereço (sala, bloco, andar). Opcional.">
                     <Input value={form.complemento ?? ''} onChange={(v) => update('complemento', v)} />
                 </Field>
-                <Field label="Bairro *">
+                <Field label="Bairro *" hint="Bairro do endereço do emitente.">
                     <Input value={form.bairro} onChange={(v) => update('bairro', v)} required />
                 </Field>
-                <Field label="Município *">
+                <Field label="Município *" hint="Nome da cidade do emitente, sem abreviações.">
                     <Input value={form.municipio} onChange={(v) => update('municipio', v)} required />
                 </Field>
-                <Field label="Código IBGE do município *">
+                <Field label="Código IBGE do município *" hint="Código de 7 dígitos do município segundo o IBGE. A SEFAZ identifica a cidade por este código, não pelo nome.">
                     <Input value={form.cod_municipio_ibge} onChange={(v) => update('cod_municipio_ibge', v)} placeholder="7 dígitos" required />
                 </Field>
-                <Field label="UF *">
+                <Field label="UF *" hint="Sigla do estado com 2 letras (ex.: SP, RJ, MG).">
                     <Input value={form.uf} onChange={(v) => update('uf', v.toUpperCase().slice(0, 2))} placeholder="SP" required />
                 </Field>
             </Section>
 
             <Section title="Numeração e ambiente">
-                <Field label="Série padrão *">
+                <Field label="Série padrão *" hint="Agrupa a numeração das notas; normalmente 1. Cada série tem sua própria sequência de números independente.">
                     <Input type="number" value={String(form.serie_padrao)} onChange={(v) => update('serie_padrao', Number(v))} required />
                 </Field>
-                <Field label="Próximo número *">
+                <Field label="Próximo número *" hint="Número que será usado na próxima NF-e emitida. A numeração deve ser sequencial e sem falhas dentro de cada série.">
                     <Input type="number" value={String(form.proximo_numero)} onChange={(v) => update('proximo_numero', Number(v))} required />
                 </Field>
-                <Field label="Ambiente SEFAZ *">
+                <Field label="Ambiente SEFAZ *" hint="Homologação = ambiente de testes, sem valor fiscal. Produção = notas oficiais e válidas. Use Homologação até validar todo o fluxo.">
                     <select
                         value={form.ambiente}
                         onChange={(e) => update('ambiente', e.target.value as FormState['ambiente'])}
@@ -211,10 +212,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
     return (
         <label className="block">
-            <span className="block text-xs font-semibold text-text-secondary mb-1">{label}</span>
+            <span className="flex items-center gap-1 text-xs font-semibold text-text-secondary mb-1">
+                {label}
+                {hint && <InfoTooltip text={hint} />}
+            </span>
             {children}
         </label>
     )

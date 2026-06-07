@@ -11,7 +11,7 @@ from ..dependencies import (
     get_nfe_service,
     require_fiscal_admin,
 )
-from ..schemas.nfe import NFeDraftCreate, NFeListResponse, NFeResponse
+from ..schemas.nfe import NFeCancelRequest, NFeDraftCreate, NFeListResponse, NFeResponse
 from ..services.danfe_renderer import DanfeRenderer
 from ..services.fiscal_config_service import FiscalConfigService
 from ..services.nfe_service import NFeService
@@ -38,6 +38,17 @@ def issue_nfe(
 ):
     with handle_fiscal_errors():
         return service.issue(current_user.id, nfe_id)
+
+
+@router.post("/{nfe_id}/cancel", response_model=NFeResponse)
+def cancel_nfe(
+    nfe_id: int,
+    payload: NFeCancelRequest,
+    current_user: User = Depends(require_fiscal_admin),
+    service: NFeService = Depends(get_nfe_service),
+):
+    with handle_fiscal_errors():
+        return service.cancel(current_user.id, nfe_id, payload.justificativa)
 
 
 @router.get("/", response_model=NFeListResponse)

@@ -60,9 +60,9 @@ class NFeItemResponse(BaseModel):
     ncm: str
     cfop: str
     unidade_comercial: str
-    quantidade: float
-    valor_unitario: float
-    valor_total: float
+    quantidade: Decimal
+    valor_unitario: Decimal
+    valor_total: Decimal
     csosn: str
     origem: str
 
@@ -84,8 +84,8 @@ class NFeResponse(BaseModel):
     motivo_rejeicao: Optional[str]
     destinatario_nome: str
     destinatario_documento: str
-    valor_produtos: float
-    valor_total: float
+    valor_produtos: Decimal
+    valor_total: Decimal
     data_emissao: Optional[datetime]
     data_autorizacao: Optional[datetime]
     itens: List[NFeItemResponse] = []
@@ -98,3 +98,7 @@ class NFeListResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+class NFeCancelRequest(BaseModel):
+    justificativa: str = Field(..., min_length=15, max_length=255)

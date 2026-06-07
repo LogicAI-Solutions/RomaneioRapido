@@ -14,7 +14,6 @@ from backend.fiscal.validators import (
     format_cnpj,
     format_cpf,
     format_currency_brl,
-    format_phone,
 )
 
 
@@ -34,6 +33,17 @@ class DanfeRenderer:
             "status": nfe.status,
             "chave_acesso": self._format_chave(nfe.chave_acesso),
             "protocolo": nfe.protocolo,
+            "cancelamento": self._render_cancelamento(nfe),
+        }
+
+    @staticmethod
+    def _render_cancelamento(nfe: NFe) -> dict | None:
+        if not nfe.protocolo_cancelamento and not nfe.justificativa_cancelamento:
+            return None
+        return {
+            "protocolo": nfe.protocolo_cancelamento,
+            "justificativa": nfe.justificativa_cancelamento,
+            "data": nfe.data_cancelamento.isoformat() if nfe.data_cancelamento else None,
         }
 
     @staticmethod

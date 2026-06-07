@@ -1,10 +1,9 @@
 """XmlBuilderService: monta o XML da NF-e 4.00 a partir de value objects.
 
-A implementação primária delega ao PyNFe. Caso a lib não esteja instalada
-(ambiente de desenvolvimento sem libxmlsec1), há um fallback construindo
-o XML manualmente com lxml — útil para gerar a prévia e ambientes de teste.
-
-A interface (build) é estável: o NFeService depende apenas dela (DIP).
+A implementação concreta delega ao PyNFe (requer a lib instalada — ver
+requirements.txt). A interface (`XmlBuilder.build`) é estável: o NFeService
+depende apenas dela (DIP), então uma implementação alternativa pode ser
+injetada sem impactar o restante do código.
 """
 from __future__ import annotations
 
