@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from backend.models.users import User
 
-from ..dependencies import get_certificate_service, require_fiscal_admin
+from ..dependencies import get_certificate_service, require_fiscal_access
 from ..domain.exceptions import CertificateNotFoundError
 from ..schemas.certificate import CertificateResponse, CertificateStatusResponse
 from ..services.certificate_service import CertificateService
@@ -23,7 +23,7 @@ _MAX_PFX_BYTES = 1 * 1024 * 1024  # 1 MB
 
 @router.get("/", response_model=CertificateStatusResponse)
 def get_status(
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: CertificateService = Depends(get_certificate_service),
 ):
     try:
@@ -43,7 +43,7 @@ def get_status(
 async def upload_certificate(
     password: str = Form(..., min_length=1, max_length=200),
     file: UploadFile = File(...),
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: CertificateService = Depends(get_certificate_service),
 ):
     contents = await file.read()
@@ -66,7 +66,7 @@ async def upload_certificate(
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 def delete_certificate(
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: CertificateService = Depends(get_certificate_service),
 ):
     service.delete(current_user.id)

@@ -92,6 +92,31 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function hasFiscalAccess(user: ReturnType<typeof useAuth>['user']) {
+  if (!user) return false
+  if (user.is_admin || user.is_unlimited || user.plan_id === 'unlimited') return true
+  if (!['basic', 'plus', 'pro', 'api', 'enterprise'].includes(user.plan_id)) return false
+  return user.subscription_status !== 'unpaid'
+}
+
+function FiscalRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <LoadingOverlay compact message="Validando acesso fiscal" />
+      </div>
+    )
+  }
+
+  if (!hasFiscalAccess(user)) {
+    return <Navigate to="/perfil?tab=subscription" replace />
+  }
+
+  return <>{children}</>
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -189,17 +214,17 @@ const router = createBrowserRouter([
       {
         path: "/fiscal/configuracao",
         element: (
-          <AdminRoute>
+          <FiscalRoute>
             <LazyPage><FiscalSettingsPage /></LazyPage>
-          </AdminRoute>
+          </FiscalRoute>
         ),
       },
       {
         path: "/fiscal/nfe",
         element: (
-          <AdminRoute>
+          <FiscalRoute>
             <LazyPage><NFePage /></LazyPage>
-          </AdminRoute>
+          </FiscalRoute>
         ),
       },
     ],

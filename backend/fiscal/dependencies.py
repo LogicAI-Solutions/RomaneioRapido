@@ -1,8 +1,8 @@
-"""Composition root das dependências fiscais.
+"""Composition root das dependencias fiscais.
 
-Concentra o `wiring` (injeção de dependências) em um único lugar.
-Os routers chamam apenas estas funções; trocar implementação concreta
-(p. ex., transmitter) exige edição de um único arquivo.
+Concentra o wiring de injecao de dependencias em um unico lugar. Os routers
+chamam apenas estas funcoes; trocar uma implementacao concreta exige edicao de
+um unico arquivo.
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from backend.core.database import get_db
 from backend.core.security import get_current_user_flexible
+from backend.core.trial_utils import is_trial_expired
 from backend.models.users import User
 
 from .repositories.certificate_repository import CertificateRepository
@@ -26,14 +27,39 @@ from .services.sefaz_transmitter import get_default_transmitter
 from .services.xml_builder_service import get_default_builder
 
 
-def require_fiscal_admin(current_user: User = Depends(get_current_user_flexible)) -> User:
-    """Acesso restrito a administradores (proposta: 'Controle de acesso restrito')."""
-    if not current_user.is_admin:
+_FISCAL_PAID_PLANS = {"basic", "plus", "pro", "api", "enterprise", "unlimited"}
+
+
+def require_fiscal_access(current_user: User = Depends(get_current_user_flexible)) -> User:
+    """Permite NF-e para admin/unlimited ou clientes em plano pago basic+."""
+    if getattr(current_user, "is_admin", False) or getattr(current_user, "is_unlimited", False):
+        return current_user
+
+    plan_id = (getattr(current_user, "plan_id", None) or "trial").strip().lower()
+    if plan_id not in _FISCAL_PAID_PLANS:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado: módulo fiscal restrito a administradores.",
+            detail="A emissão de NF-e está disponível a partir do plano Básico.",
         )
+
+    if is_trial_expired(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seu período de teste terminou. Assine um plano para emitir NF-e.",
+        )
+
+    subscription_status = getattr(current_user, "subscription_status", "active") or "active"
+    if subscription_status == "unpaid":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sua assinatura está suspensa por falta de pagamento. Regularize para emitir NF-e.",
+        )
+
     return current_user
+
+
+# Compatibilidade com routers existentes; a regra deixou de ser "admin only".
+require_fiscal_admin = require_fiscal_access
 
 
 def get_crypto_service() -> CryptoService:

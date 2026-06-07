@@ -1,7 +1,7 @@
 /**
  * Página de configuração fiscal: dados do emitente + certificado A1.
  *
- * Acesso restrito a administradores (também enforce no backend).
+ * Acesso liberado para clientes com plano pago (também enforce no backend).
  */
 import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -11,11 +11,8 @@ import IssuerConfigForm from '@/components/fiscal/IssuerConfigForm'
 import CertificateUploadCard from '@/components/fiscal/CertificateUploadCard'
 import { fiscalApi, type FiscalConfig } from '@/services/fiscal'
 import { translateError } from '@/utils/errors'
-import { useAuth } from '@/context/AuthContext'
-import { Navigate } from 'react-router-dom'
 
 export default function FiscalSettingsPage() {
-    const { user } = useAuth()
     const [config, setConfig] = useState<FiscalConfig | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -33,10 +30,6 @@ export default function FiscalSettingsPage() {
         }
         load()
     }, [])
-
-    if (user && !user.is_admin) {
-        return <Navigate to="/error" replace state={{ code: 403 }} />
-    }
 
     const handleSave = async (payload: Parameters<typeof fiscalApi.saveConfig>[0]) => {
         try {

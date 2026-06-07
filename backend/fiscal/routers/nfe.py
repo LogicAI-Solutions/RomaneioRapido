@@ -9,7 +9,7 @@ from ..dependencies import (
     get_danfe_renderer,
     get_fiscal_config_service,
     get_nfe_service,
-    require_fiscal_admin,
+    require_fiscal_access,
 )
 from ..schemas.nfe import NFeCancelRequest, NFeDraftCreate, NFeListResponse, NFeResponse
 from ..services.danfe_renderer import DanfeRenderer
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/fiscal/nfe", tags=["fiscal"])
 @router.post("/", response_model=NFeResponse)
 def create_draft(
     payload: NFeDraftCreate,
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: NFeService = Depends(get_nfe_service),
 ):
     with handle_fiscal_errors():
@@ -33,7 +33,7 @@ def create_draft(
 @router.post("/{nfe_id}/issue", response_model=NFeResponse)
 def issue_nfe(
     nfe_id: int,
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: NFeService = Depends(get_nfe_service),
 ):
     with handle_fiscal_errors():
@@ -44,7 +44,7 @@ def issue_nfe(
 def cancel_nfe(
     nfe_id: int,
     payload: NFeCancelRequest,
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: NFeService = Depends(get_nfe_service),
 ):
     with handle_fiscal_errors():
@@ -56,7 +56,7 @@ def list_nfes(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     status: Optional[str] = Query(None),
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: NFeService = Depends(get_nfe_service),
 ):
     return service.list(current_user.id, page=page, per_page=per_page, status=status)
@@ -65,7 +65,7 @@ def list_nfes(
 @router.get("/{nfe_id}", response_model=NFeResponse)
 def get_nfe(
     nfe_id: int,
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: NFeService = Depends(get_nfe_service),
 ):
     with handle_fiscal_errors():
@@ -75,7 +75,7 @@ def get_nfe(
 @router.get("/{nfe_id}/danfe")
 def get_danfe_preview(
     nfe_id: int,
-    current_user: User = Depends(require_fiscal_admin),
+    current_user: User = Depends(require_fiscal_access),
     service: NFeService = Depends(get_nfe_service),
     cfg_service: FiscalConfigService = Depends(get_fiscal_config_service),
     renderer: DanfeRenderer = Depends(get_danfe_renderer),

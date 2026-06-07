@@ -1,12 +1,12 @@
 /**
  * Página principal de NF-e: lista, emite e abre o DANFE (prévia).
  *
- * Acesso restrito a administradores. A criação de rascunhos delega ao
+ * Acesso liberado para clientes com plano pago. A criação de rascunhos delega ao
  * formulário inline `NFeDraftForm` (mantém SRP do componente).
  */
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, FileText, Plus, Printer, Send, Settings2, X } from 'lucide-react'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -14,10 +14,8 @@ import DanfeDocument from '@/components/fiscal/DanfeDocument'
 import NFeDraftForm from '@/components/fiscal/NFeDraftForm'
 import { fiscalApi, type DanfeData, type NFeResponse } from '@/services/fiscal'
 import { translateError } from '@/utils/errors'
-import { useAuth } from '@/context/AuthContext'
 
 export default function NFePage() {
-    const { user } = useAuth()
     const navigate = useNavigate()
     const [items, setItems] = useState<NFeResponse[]>([])
     const [loading, setLoading] = useState(true)
@@ -55,10 +53,6 @@ export default function NFePage() {
             setLoading(false)
         })()
     }, [])
-
-    if (user && !user.is_admin) {
-        return <Navigate to="/error" replace state={{ code: 403 }} />
-    }
 
     const handleCreate = async (payload: Parameters<typeof fiscalApi.createDraft>[0]) => {
         try {
@@ -223,7 +217,7 @@ export default function NFePage() {
                         <div>
                             <h2 className="text-base font-bold text-text-primary">Certificado A1 pendente</h2>
                             <p className="text-sm text-text-secondary mt-1">
-                                Para emitir em homologação ou produção, envie um Certificado Digital A1 válido na Configuração Fiscal.
+                                Para emitir NF-e, envie um Certificado Digital A1 válido da empresa na Configuração Fiscal.
                             </p>
                         </div>
                     </div>
