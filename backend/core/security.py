@@ -147,7 +147,7 @@ def get_current_user_flexible(request: Request, db: Session = Depends(get_db)):
     # 2. Tentar API Key
     api_key_header = request.headers.get("X-API-Key", "")
     if api_key_header:
-        from backend.crud.api_keys import get_user_by_api_key
+        from backend.repository.api_keys import get_user_by_api_key
         result = get_user_by_api_key(db, api_key_header)
         if result:
             user, api_key_obj = result

@@ -18,7 +18,7 @@ from backend.models.products import Product
 from backend.models.clients import Client
 from backend.models.pending_romaneio import PendingRomaneio
 from backend.models.inventory import InventoryMovement, MovementType
-from backend.crud import pending_romaneio as crud_pending
+from backend.repository import pending_romaneio as crud_pending
 from backend.schemas.pending_romaneio import (
     PendingRomaneioCreate,
     PendingRomaneioUpdate,

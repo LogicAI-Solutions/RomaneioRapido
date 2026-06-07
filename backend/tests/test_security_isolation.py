@@ -4,8 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.core.database import Base
-from backend.crud.inventory import create_movement
-from backend.crud.pending_romaneio import create_pending_romaneio
+from backend.repository.inventory import create_movement
+from backend.repository.pending_romaneio import create_pending_romaneio
 from backend.models.categories import Category
 from backend.models.clients import Client
 from backend.models.inventory import InventoryMovement, MovementType

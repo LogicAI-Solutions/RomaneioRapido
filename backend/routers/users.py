@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
 from backend.core.limiter import limiter
-from backend.crud.users import create_user, get_user_by_email
+from backend.repository.users import create_user, get_user_by_email
 from backend.schemas.auth import UserCreate, UserResponse
 from backend.config.logger import get_dynamic_logger
 

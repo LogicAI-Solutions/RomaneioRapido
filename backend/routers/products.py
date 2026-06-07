@@ -10,7 +10,7 @@ from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.products import ProductCreate, ProductUpdate, ProductResponse, ProductSlimResponse, ProductPaginatedResponse
-from backend.crud import products as crud
+from backend.repository import products as crud
 from backend.config.logger import get_dynamic_logger
 from backend.core.plans_config import PLANS_CONFIG
 

@@ -6,7 +6,7 @@ from backend.core.limiter import limiter
 from backend.core.plans_config import PLANS_CONFIG
 from backend.models.users import User
 from backend.schemas.api_keys import ApiKeyCreate, ApiKeyResponse, ApiKeyCreatedResponse
-from backend.crud.api_keys import (
+from backend.repository.api_keys import (
     create_api_key,
     list_api_keys,
     count_active_api_keys,

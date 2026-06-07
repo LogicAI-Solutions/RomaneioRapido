@@ -7,7 +7,7 @@ from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType, StockLevelPaginatedResponse, RomaneioFinalizeRequest, RomaneioFinalizeResponse
-from backend.crud import inventory as crud
+from backend.repository import inventory as crud
 from backend.config.logger import get_dynamic_logger
 
 logger = get_dynamic_logger("inventory")

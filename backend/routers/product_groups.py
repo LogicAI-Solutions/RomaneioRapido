@@ -14,7 +14,7 @@ from backend.schemas.product_groups import (
     ProductGroupStockReport,
     GroupedStockReportResponse,
 )
-from backend.crud import product_groups as crud
+from backend.repository import product_groups as crud
 from backend.config.logger import get_dynamic_logger
 from backend.core.plans_config import PLANS_CONFIG
 
