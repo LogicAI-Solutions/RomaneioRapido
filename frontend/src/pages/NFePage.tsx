@@ -187,7 +187,7 @@ export default function NFePage() {
                 <div className="flex-1">
                     <h2 className="text-base font-bold text-text-primary">Funcionalidade Nova</h2>
                     <p className="text-sm text-text-secondary mt-2">
-                        O módulo de Notas Fiscais Eletrônicas foi recentemente lançado. Se encontrar algum erro ou tiver sugestões para melhorar sua experiência, entre em contato com nosso suporte em <a href="mailto:romaneiorapido.suporte@gmail.com" className="text-brand-600 hover:text-brand-700 font-semibold underline">romaneiorapido.suporte@gmail.com</a>.
+                        O módulo de Notas Fiscais Eletrônicas foi recentemente lançado. Se encontrar algum erro ou tiver sugestões para melhorar sua experiência, entre em contato com nosso suporte via <a href="https://wa.me/5511920688389" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:text-brand-700 font-semibold underline">WhatsApp</a>.
                     </p>
                 </div>
             </div>
