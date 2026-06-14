@@ -12,7 +12,7 @@
  */
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Lock, Sparkles } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { hasFiscalAccess } from '@/utils/fiscalAccess'
 
