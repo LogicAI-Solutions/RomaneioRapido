@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, FileText, Plus, Printer, Send, Settings2, X } from 'lucide-react'
+import { AlertTriangle, FileText, Plus, Printer, Send, Settings2, X, Info } from 'lucide-react'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import ConfirmModal from '@/components/ConfirmModal'
 import DanfeDocument from '@/components/fiscal/DanfeDocument'
@@ -179,6 +179,18 @@ export default function NFePage() {
                     {!hasFiscalConfig ? 'Configurar emitente' : showForm ? 'Fechar' : 'Nova NF-e'}
                 </button>
             </header>
+
+            <div className="border border-brand/30 bg-brand/5 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-brand/20 text-brand-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Info className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                    <h2 className="text-base font-bold text-text-primary">Funcionalidade Nova</h2>
+                    <p className="text-sm text-text-secondary mt-2">
+                        O módulo de Notas Fiscais Eletrônicas foi recentemente lançado. Se encontrar algum erro ou tiver sugestões para melhorar sua experiência, entre em contato com nosso suporte em <a href="mailto:romaneiorapido.suporte@gmail.com" className="text-brand-600 hover:text-brand-700 font-semibold underline">romaneiorapido.suporte@gmail.com</a>.
+                    </p>
+                </div>
+            </div>
 
             {!hasFiscalConfig && (
                 <div className="border border-warning/30 bg-warning/10 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
