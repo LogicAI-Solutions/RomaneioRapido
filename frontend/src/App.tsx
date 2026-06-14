@@ -92,15 +92,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function hasFiscalAccess(user: ReturnType<typeof useAuth>['user']) {
-  if (!user) return false
-  if (user.is_admin || user.is_unlimited || user.plan_id === 'unlimited') return true
-  if (!['basic', 'plus', 'pro', 'api', 'enterprise'].includes(user.plan_id)) return false
-  return user.subscription_status !== 'unpaid'
-}
-
 function FiscalRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth()
+  const { isLoading } = useAuth()
 
   if (isLoading) {
     return (
@@ -110,10 +103,8 @@ function FiscalRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!hasFiscalAccess(user)) {
-    return <Navigate to="/perfil?tab=subscription" replace />
-  }
-
+  // O acesso ao módulo fiscal é decidido na própria página (FiscalAccessGate):
+  // quem está só no trial vê a tela com blur e um convite para assinar.
   return <>{children}</>
 }
 
