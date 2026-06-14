@@ -28,6 +28,7 @@ import TrialExpiredBanner from '@/components/TrialExpiredBanner'
 import PaymentFailedBanner from '@/components/PaymentFailedBanner'
 import { useSubscription } from '@/hooks/useSubscription'
 import PlansGrid from '@/components/PlansGrid'
+import NotaFiscalNavGroup from '@/components/NotaFiscalNavGroup'
 
 const navItems = [
     { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
@@ -57,6 +58,9 @@ export default function AppLayout() {
 
     const isTrialLocked = user?.plan_id === 'trial' && user?.trial_expired && !hasFullAccess
     const isUnpaidLocked = subscriptionStatus === 'unpaid' && !hasFullAccess && !isManualPremium
+    const hasFiscalAccess = Boolean(
+        hasFullAccess || (user && ['basic', 'plus', 'pro', 'api', 'enterprise'].includes(user.plan_id))
+    )
     
     const isLockEnabled = isTrialLocked || isUnpaidLocked
 
@@ -136,50 +140,64 @@ export default function AppLayout() {
 
                 {/* Nav */}
                 <nav className={`flex-1 py-6 space-y-1.5 overflow-y-auto transition-all ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                    {[
-                        ...navItems,
-                        ...(user?.is_admin ? [{ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }] : [])
-                    ].map((item) => {
-                        // Se o bloqueio estiver ativo, TUDO exceto perfil é desabilitado
-                        const isDisabled = isLockEnabled && item.to !== '/perfil'
-                        
-                        return (
-                            <NavLink
-                                key={item.to}
-                                to={isDisabled ? '#' : item.to}
-                                onClick={(e) => {
-                                    if (isDisabled) {
-                                        e.preventDefault()
-                                        toast.error(
-                                            isUnpaidLocked
-                                                ? 'Sua assinatura está suspensa. Regularize o pagamento.'
-                                                : 'Seu teste expirou. Assine um plano para continuar.'
-                                        )
-                                        return
+                    {(() => {
+                        const lockMessage = isUnpaidLocked
+                            ? 'Sua assinatura está suspensa. Regularize o pagamento.'
+                            : 'Seu teste expirou. Assine um plano para continuar.'
+
+                        const renderNavLink = (item: { to: string; label: string; icon: typeof LayoutDashboard }) => {
+                            // Se o bloqueio estiver ativo, TUDO exceto perfil é desabilitado
+                            const isDisabled = isLockEnabled && item.to !== '/perfil'
+
+                            return (
+                                <NavLink
+                                    key={item.to}
+                                    to={isDisabled ? '#' : item.to}
+                                    onClick={(e) => {
+                                        if (isDisabled) {
+                                            e.preventDefault()
+                                            toast.error(lockMessage)
+                                            return
+                                        }
+                                        setSidebarOpen(false)
+                                    }}
+                                    title={isCollapsed ? item.label : ""}
+                                    className={({ isActive }) =>
+                                        `flex items-center rounded-xl text-[14px] font-semibold transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'}
+                                        ${isActive
+                                            ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
+                                            : isDisabled
+                                                ? 'text-text-secondary/60 cursor-not-allowed opacity-50'
+                                                : 'text-text-secondary hover:text-text-primary hover:bg-background/80'
+                                        }`
                                     }
-                                    setSidebarOpen(false)
-                                }}
-                                title={isCollapsed ? item.label : ""}
-                                className={({ isActive }) =>
-                                    `flex items-center rounded-xl text-[14px] font-semibold transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} 
-                                    ${isActive
-                                        ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
-                                        : isDisabled 
-                                            ? 'text-text-secondary/60 cursor-not-allowed opacity-50' 
-                                            : 'text-text-secondary hover:text-text-primary hover:bg-background/80'
-                                    }`
-                                }
-                            >
-                                <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0 ${sidebarOpen ? 'animate-in fade-in slide-in-from-left-2' : ''}`} />
-                                {!isCollapsed && (
-                                    <div className="flex-1 flex items-center justify-between min-w-0">
-                                        <span className="whitespace-nowrap animate-in fade-in duration-300 truncate">{item.label}</span>
-                                        {isDisabled && <ShieldCheck className="w-3.5 h-3.5 text-text-secondary/60" />}
-                                    </div>
+                                >
+                                    <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0 ${sidebarOpen ? 'animate-in fade-in slide-in-from-left-2' : ''}`} />
+                                    {!isCollapsed && (
+                                        <div className="flex-1 flex items-center justify-between min-w-0">
+                                            <span className="whitespace-nowrap animate-in fade-in duration-300 truncate">{item.label}</span>
+                                            {isDisabled && <ShieldCheck className="w-3.5 h-3.5 text-text-secondary/60" />}
+                                        </div>
+                                    )}
+                                </NavLink>
+                            )
+                        }
+
+                        return (
+                            <>
+                                {navItems.map(renderNavLink)}
+                                {hasFiscalAccess && (
+                                    <NotaFiscalNavGroup
+                                        isCollapsed={isCollapsed}
+                                        isLocked={isLockEnabled}
+                                        lockMessage={lockMessage}
+                                        onNavigate={() => setSidebarOpen(false)}
+                                    />
                                 )}
-                            </NavLink>
+                                {user?.is_admin && renderNavLink({ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck })}
+                            </>
                         )
-                    })}
+                    })()}
                 </nav>
 
                 {/* Trial Badge/Lock */}

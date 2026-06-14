@@ -5,7 +5,7 @@ from backend.core.database import get_db
 from backend.core.security import get_current_user_flexible
 from backend.core.trial_utils import require_active_plan_flexible
 from backend.schemas.pending_romaneio import PendingRomaneio, PendingRomaneioCreate, PendingRomaneioUpdate
-from backend.crud import pending_romaneio as crud
+from backend.repository import pending_romaneio as crud
 
 router = APIRouter(prefix="/pending", tags=["pending"])
 

@@ -8,7 +8,7 @@ from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.clients import ClientCreate, ClientUpdate, ClientResponse
-from backend.crud import clients as crud
+from backend.repository import clients as crud
 from backend.config.logger import get_dynamic_logger
 
 logger = get_dynamic_logger("clients")

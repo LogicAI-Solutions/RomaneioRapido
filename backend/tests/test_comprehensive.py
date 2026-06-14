@@ -7,8 +7,8 @@ from backend.models.clients import Client
 from backend.models.categories import Category
 from backend.models.pending_romaneio import PendingRomaneio
 from backend.models.inventory import InventoryMovement, MovementType
-from backend.crud import pending_romaneio as crud_pending
-from backend.crud import inventory as crud_inventory
+from backend.repository import pending_romaneio as crud_pending
+from backend.repository import inventory as crud_inventory
 from backend.schemas.pending_romaneio import PendingRomaneioCreate, PendingItem
 from backend.schemas.inventory import InventoryMovementCreate
 

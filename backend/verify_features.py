@@ -10,7 +10,7 @@ from backend.models.categories import Category
 from backend.models.clients import Client
 from backend.models.pending_romaneio import PendingRomaneio
 from backend.models.inventory import InventoryMovement, MovementType
-from backend.crud.pending_romaneio import create_pending_romaneio, update_pending_romaneio, delete_pending_romaneio
+from backend.repository.pending_romaneio import create_pending_romaneio, update_pending_romaneio, delete_pending_romaneio
 from backend.schemas.pending_romaneio import PendingRomaneioCreate, PendingRomaneioUpdate, PendingItem
 
 def verify():

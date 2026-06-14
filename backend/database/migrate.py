@@ -193,6 +193,7 @@ def run_migrations():
     from backend.models.api_keys import ApiKey
     from backend.models.auth_sessions import RefreshSession
     from backend.models.pending_romaneio import PendingRomaneio
+    from backend.fiscal.models import FiscalConfig, FiscalCertificate, NFe, NFeItem
     from sqlalchemy import Enum as _SAEnum
 
     # Cria todas as tabelas (DDL principal) - Base para novas instalações
@@ -218,7 +219,11 @@ def run_migrations():
         InventoryMovement,
         Client,
         ApiKey,
-        RefreshSession
+        RefreshSession,
+        FiscalConfig,
+        FiscalCertificate,
+        NFe,
+        NFeItem,
     ]
 
     for model in models:
@@ -302,6 +307,51 @@ def run_migrations():
                 print(f"  [✓] Index {idx_name} ensured")
         except Exception as inner:
             print(f"  ⚠️ Warning creating {idx_name}: {inner}")
+
+    # ── NF-e: correções estruturais ──────────────────────────────────────────
+    # 1) Valores monetários/quantidade devem ser NUMERIC (Decimal), nunca FLOAT,
+    #    para não introduzir erro de arredondamento que faria a soma do XML
+    #    divergir e a SEFAZ rejeitar a nota. A migração dinâmica só ADICIONA
+    #    colunas, então convertemos o tipo aqui para bancos já existentes.
+    nfe_numeric_columns = [
+        ("nfes", "valor_produtos", "numeric(15,2)"),
+        ("nfes", "valor_total", "numeric(15,2)"),
+        ("nfe_items", "quantidade", "numeric(15,4)"),
+        ("nfe_items", "valor_unitario", "numeric(21,10)"),
+        ("nfe_items", "valor_total", "numeric(15,2)"),
+    ]
+    print("\n🔧 Ensuring NF-e monetary columns are NUMERIC...")
+    for table_name, column_name, pg_type in nfe_numeric_columns:
+        try:
+            with database.engine.connect() as conn:
+                conn.execute(text(
+                    f"ALTER TABLE {table_name} "
+                    f"ALTER COLUMN {column_name} TYPE {pg_type} "
+                    f"USING {column_name}::{pg_type};"
+                ))
+                conn.commit()
+                print(f"  [✓] {table_name}.{column_name} -> {pg_type}")
+        except Exception as e:
+            print(f"  ⚠️ Warning altering {table_name}.{column_name}: {e}")
+
+    # 2) O número fiscal só é único depois de atribuído na emissão (numero > 0).
+    #    Rascunhos nascem com numero=0 e colidiriam num índice único total.
+    #    Recriamos o índice como PARCIAL.
+    print("\n🔧 Ensuring partial unique index on nfes(user_id, serie, numero)...")
+    with database.engine.connect() as conn:
+        try:
+            conn.execute(text("DROP INDEX IF EXISTS ix_nfes_user_numero_serie;"))
+            conn.execute(text(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS ix_nfes_user_numero_serie
+                ON nfes (user_id, serie, numero)
+                WHERE numero > 0;
+                """
+            ))
+            conn.commit()
+            print("  ✅ Partial unique index ensured")
+        except Exception as e:
+            print(f"  ⚠️ Warning creating nfes partial index: {e}")
 
     print("\n" + "=" * 50)
     print("✅ Migration completed!")
