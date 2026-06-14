@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     SMTP_FROM: Optional[str] = None
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Fiscal / NF-e
+    FISCAL_ENCRYPTION_KEY: Optional[str] = None  # Fernet key (base64 urlsafe, 32 bytes). OBRIGATÓRIA em produção; em dev, derivada do SECRET_KEY.
+    SEFAZ_AMBIENTE: str = "homologacao"  # "homologacao" | "producao"
+    SEFAZ_UF_PADRAO: str = "SP"
+
     # Stripe
     STRIPE_ENABLED: bool = True
     STRIPE_SECRET_KEY: Optional[str] = None

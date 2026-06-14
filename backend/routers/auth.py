@@ -15,7 +15,7 @@ from backend.core.auth_tokens import (
 from backend.core.security import verify_password, create_user_access_token, get_current_user, get_password_hash
 from backend.core.config import settings
 from backend.core.limiter import limiter
-from backend.crud.users import get_user_by_email
+from backend.repository.users import get_user_by_email
 from backend.schemas.auth import Token, LoginRequest, UserResponse, UserUpdate, ForgotPasswordRequest, ResetPasswordRequest
 from backend.models.users import User
 from backend.config.logger import get_dynamic_logger

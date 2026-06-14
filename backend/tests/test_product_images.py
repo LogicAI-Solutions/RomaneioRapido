@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.core.database import Base
-from backend.crud.products import delete_product
+from backend.repository.products import delete_product
 from backend.models.categories import Category
 from backend.models.products import Product
 from backend.models.users import User
