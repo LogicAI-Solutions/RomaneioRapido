@@ -12,11 +12,16 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import ConfirmModal from '@/components/ConfirmModal'
 import DanfeDocument from '@/components/fiscal/DanfeDocument'
 import NFeDraftForm from '@/components/fiscal/NFeDraftForm'
+import FiscalAccessGate from '@/components/fiscal/FiscalAccessGate'
 import { fiscalApi, type DanfeData, type NFeResponse } from '@/services/fiscal'
 import { translateError } from '@/utils/errors'
+import { useAuth } from '@/context/AuthContext'
+import { hasFiscalAccess } from '@/utils/fiscalAccess'
 
 export default function NFePage() {
     const navigate = useNavigate()
+    const { user } = useAuth()
+    const canUseFiscal = hasFiscalAccess(user)
     const [items, setItems] = useState<NFeResponse[]>([])
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
@@ -37,6 +42,12 @@ export default function NFePage() {
     }
 
     useEffect(() => {
+        // Sem acesso fiscal: não dispara chamadas (evita 403/toasts). A tela
+        // é renderizada borrada pelo FiscalAccessGate como upsell.
+        if (!canUseFiscal) {
+            setLoading(false)
+            return
+        }
         ;(async () => {
             try {
                 const [listResult, config, certificate] = await Promise.all([
@@ -52,7 +63,7 @@ export default function NFePage() {
             }
             setLoading(false)
         })()
-    }, [])
+    }, [canUseFiscal])
 
     const handleCreate = async (payload: Parameters<typeof fiscalApi.createDraft>[0]) => {
         try {
@@ -151,6 +162,7 @@ export default function NFePage() {
     }
 
     return (
+        <FiscalAccessGate>
         <div className="p-6 max-w-6xl mx-auto space-y-6">
             <header className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -322,6 +334,7 @@ export default function NFePage() {
                 cancelText="Cancelar"
             />
         </div>
+        </FiscalAccessGate>
     )
 }
 

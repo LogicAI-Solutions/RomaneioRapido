@@ -9,15 +9,26 @@ import { ShieldCheck } from 'lucide-react'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import IssuerConfigForm from '@/components/fiscal/IssuerConfigForm'
 import CertificateUploadCard from '@/components/fiscal/CertificateUploadCard'
+import FiscalAccessGate from '@/components/fiscal/FiscalAccessGate'
 import { fiscalApi, type FiscalConfig } from '@/services/fiscal'
 import { translateError } from '@/utils/errors'
+import { useAuth } from '@/context/AuthContext'
+import { hasFiscalAccess } from '@/utils/fiscalAccess'
 
 export default function FiscalSettingsPage() {
+    const { user } = useAuth()
+    const canUseFiscal = hasFiscalAccess(user)
     const [config, setConfig] = useState<FiscalConfig | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
+        // Sem acesso fiscal não busca config (evita 403); a tela é exibida
+        // borrada pelo FiscalAccessGate.
+        if (!canUseFiscal) {
+            setLoading(false)
+            return
+        }
         const load = async () => {
             try {
                 const data = await fiscalApi.getConfig()
@@ -29,7 +40,7 @@ export default function FiscalSettingsPage() {
             }
         }
         load()
-    }, [])
+    }, [canUseFiscal])
 
     const handleSave = async (payload: Parameters<typeof fiscalApi.saveConfig>[0]) => {
         try {
@@ -53,6 +64,7 @@ export default function FiscalSettingsPage() {
     }
 
     return (
+        <FiscalAccessGate>
         <div className="p-6 max-w-5xl mx-auto space-y-6">
             <header className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center">
@@ -70,5 +82,6 @@ export default function FiscalSettingsPage() {
 
             <IssuerConfigForm initialValue={config} saving={saving} onSubmit={handleSave} />
         </div>
+        </FiscalAccessGate>
     )
 }

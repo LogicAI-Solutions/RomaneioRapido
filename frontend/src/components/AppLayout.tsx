@@ -58,10 +58,7 @@ export default function AppLayout() {
 
     const isTrialLocked = user?.plan_id === 'trial' && user?.trial_expired && !hasFullAccess
     const isUnpaidLocked = subscriptionStatus === 'unpaid' && !hasFullAccess && !isManualPremium
-    const hasFiscalAccess = Boolean(
-        hasFullAccess || (user && ['basic', 'plus', 'pro', 'api', 'enterprise'].includes(user.plan_id))
-    )
-    
+
     const isLockEnabled = isTrialLocked || isUnpaidLocked
 
     // Bloqueio de navegação forçada e refresh de status
@@ -186,14 +183,12 @@ export default function AppLayout() {
                         return (
                             <>
                                 {navItems.map(renderNavLink)}
-                                {hasFiscalAccess && (
-                                    <NotaFiscalNavGroup
-                                        isCollapsed={isCollapsed}
-                                        isLocked={isLockEnabled}
-                                        lockMessage={lockMessage}
-                                        onNavigate={() => setSidebarOpen(false)}
-                                    />
-                                )}
+                                <NotaFiscalNavGroup
+                                    isCollapsed={isCollapsed}
+                                    isLocked={isLockEnabled}
+                                    lockMessage={lockMessage}
+                                    onNavigate={() => setSidebarOpen(false)}
+                                />
                                 {user?.is_admin && renderNavLink({ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck })}
                             </>
                         )
