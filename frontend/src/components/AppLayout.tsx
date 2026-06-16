@@ -19,7 +19,9 @@ import {
     Clock,
     ShieldCheck,
     AlertTriangle,
-    LifeBuoy
+    LifeBuoy,
+    FileText,
+    Settings2
 } from 'lucide-react'
 import { getWhatsAppLink } from '@/constants/contacts'
 import { WhatsAppIcon } from '@/assets/WhatsAppIcon'
@@ -38,6 +40,12 @@ const navItems = [
     { to: '/grupos', label: 'Grupos', icon: Layers },
     { to: '/categorias', label: 'Categorias', icon: Tags },
     { to: '/clientes', label: 'Clientes', icon: Users },
+]
+
+// Itens do grupo "Nota Fiscal" (espelham o NotaFiscalNavGroup da sidebar)
+const fiscalNavItems = [
+    { to: '/fiscal/nfe', label: 'Emissão NF-e', icon: FileText },
+    { to: '/fiscal/configuracao', label: 'Config. Fiscal', icon: Settings2 },
 ]
 
 export default function AppLayout() {
@@ -344,7 +352,12 @@ export default function AppLayout() {
                             </div>
 
                             <div className="grid grid-cols-3 gap-4 p-5 flex-1 content-start">
-                                {navItems.map((item) => {
+                                {[
+                                    ...navItems,
+                                    ...fiscalNavItems,
+                                    ...(user?.is_admin ? [{ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }] : []),
+                                    { to: '/perfil', label: 'Perfil', icon: User },
+                                ].map((item) => {
                                     const isDisabled = isLockEnabled && item.to !== '/perfil'
                                     return (
                                         <button
@@ -361,13 +374,6 @@ export default function AppLayout() {
                                         </button>
                                     )
                                 })}
-                                <button
-                                    onClick={() => handleMobileMenuNavigate('/perfil')}
-                                    className="flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border border-border text-text-secondary hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all min-h-[6.25rem] col-start-2"
-                                >
-                                    <User className="w-5 h-5" />
-                                    <span className="text-[11px] font-semibold">Perfil</span>
-                                </button>
                             </div>
 
                             <div className="p-4 grid grid-cols-2 gap-2">
