@@ -216,7 +216,7 @@ export default function NFeDraftForm({ saving, onSubmit }: Props) {
                     <button
                         type="button"
                         onClick={() => setItens((prev) => [...prev, emptyItem()])}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-colors shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark text-card text-xs font-black transition-all active:scale-[0.97] shrink-0"
                     >
                         <Plus className="w-3.5 h-3.5" /> Adicionar item
                     </button>
@@ -308,17 +308,17 @@ export default function NFeDraftForm({ saving, onSubmit }: Props) {
                 <div className="rounded-xl border border-error/30 bg-error/10 text-error px-4 py-3 text-sm">{error}</div>
             )}
 
-            <div className="bg-card border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-4 shadow-lg shadow-black/5">
+            <div className="bg-card border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-4 shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary/70">Total da nota</p>
-                    <p className="text-2xl font-black text-text-primary leading-tight">
+                    <p className="text-[11px] font-black uppercase tracking-[0.08em] text-text-secondary/70">Total da nota</p>
+                    <p className="text-2xl font-black tracking-tight text-text-primary leading-tight tabular-nums">
                         {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </p>
                 </div>
                 <button
                     type="submit"
                     disabled={saving}
-                    className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-60 transition-colors"
+                    className="px-6 py-3 rounded-xl bg-primary hover:bg-primary-dark text-card font-black disabled:opacity-60 transition-all active:scale-[0.98]"
                 >
                     {saving ? 'Salvando…' : 'Salvar rascunho'}
                 </button>
@@ -342,19 +342,19 @@ function SectionCard({
 }) {
     return (
         <section className="bg-card border border-border rounded-2xl overflow-hidden">
-            <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-background/40">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5" />
+            <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-border bg-background/40">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary">
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-text-primary truncate">{title}</h3>
-                        {subtitle && <p className="text-xs text-text-secondary truncate">{subtitle}</p>}
+                        <h3 className="text-sm font-black tracking-tight text-text-primary truncate">{title}</h3>
+                        {subtitle && <p className="text-xs font-medium text-text-secondary truncate">{subtitle}</p>}
                     </div>
                 </div>
                 {action}
             </header>
-            <div className="p-5">{children}</div>
+            <div className="p-4 sm:p-5">{children}</div>
         </section>
     )
 }

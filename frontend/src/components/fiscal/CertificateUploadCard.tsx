@@ -73,12 +73,17 @@ export default function CertificateUploadCard() {
 
     return (
         <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-5">
-            <header className="flex items-center justify-between gap-3">
-                <div>
-                    <h3 className="text-sm sm:text-base font-bold text-text-primary">Certificado Digital A1</h3>
-                    <p className="text-xs text-text-secondary mt-1">
-                        Arquivo .pfx armazenado criptografado em repouso. Necessário para assinar XMLs da NF-e.
-                    </p>
+            <header className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                    <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary">
+                        <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                    <div className="min-w-0">
+                        <h3 className="text-sm sm:text-base font-black tracking-tight text-text-primary">Certificado Digital A1</h3>
+                        <p className="text-xs font-medium text-text-secondary mt-0.5">
+                            Arquivo .pfx armazenado criptografado em repouso. Necessário para assinar XMLs da NF-e.
+                        </p>
+                    </div>
                 </div>
                 <StatusBadge status={status} loading={loading} />
             </header>
