@@ -247,6 +247,46 @@
   animation: landing-loader-pass 0.42s ease-in-out forwards;
 }
 
+/* Landing: scroll-driven motion e micro-interações */
+@keyframes gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+}
+
+.landing-hero-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 42%, #eef6ff 100%);
+  background-size: 220% 220%;
+  animation: gradient-pan 22s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .hover-lift:hover {
+    transform: none !important;
+  }
+
+  .landing-hero-gradient {
+    animation: none !important;
+  }
+}
+
 /* Sistema visual global: bordas finas, cantos mais retos e sem sombras pesadas. */
 :where(.rounded) {
   border-radius: var(--app-radius-md) !important;

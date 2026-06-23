@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
+import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, useReducedMotion, useScroll, useTransform, type HTMLMotionProps, type MotionStyle } from 'framer-motion'
 import {
     AlertTriangle,
     ArrowRight,
@@ -83,15 +84,27 @@ const userPhotos = [
 
 export default function LandingPage() {
     const navigate = useNavigate()
+    const prefersReducedMotion = useReducedMotion()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0)
     const [isLoaderVisible, setIsLoaderVisible] = useState(true)
     const [isLoaderLeaving, setIsLoaderLeaving] = useState(false)
     const [loaderStep, setLoaderStep] = useState<'fast' | 'welcome'>('fast')
+    const [contentReady, setContentReady] = useState(false)
 
+    const heroRef = useRef<HTMLElement>(null)
     const scrollRef = useRef<HTMLDivElement>(null)
     const isHovered = useRef(false)
     const visiblePlans = PLANS.filter((plan) => !plan.hidden)
+    const { scrollYProgress: heroScroll } = useScroll({
+        target: heroRef,
+        offset: ['start start', 'end start']
+    })
+    const heroTextY = useTransform(heroScroll, [0, 1], [0, -78])
+    const heroVisualY = useTransform(heroScroll, [0, 1], [0, 96])
+    const heroVisualRotate = useTransform(heroScroll, [0, 1], [0, -3])
+    const heroBackdropY = useTransform(heroScroll, [0, 1], [0, 54])
+    const heroBackdropOpacity = useTransform(heroScroll, [0, 0.9], [1, 0.58])
 
     const scrollToPlan = useCallback((index: number) => {
         if (!scrollRef.current || !scrollRef.current.children[0]) return
@@ -113,7 +126,10 @@ export default function LandingPage() {
 
     useEffect(() => {
         const welcomeTimer = window.setTimeout(() => setLoaderStep('welcome'), 420)
-        const leaveTimer = window.setTimeout(() => setIsLoaderLeaving(true), 1450)
+        const leaveTimer = window.setTimeout(() => {
+            setIsLoaderLeaving(true)
+            setContentReady(true)
+        }, 1450)
         const hideTimer = window.setTimeout(() => setIsLoaderVisible(false), 2150)
 
         return () => {
@@ -163,10 +179,10 @@ export default function LandingPage() {
                         </button>
                         <button
                             onClick={start}
-                            className="inline-flex h-8 items-center gap-2 rounded-xl bg-primary px-4 text-[13px] font-black text-card hover:bg-primary-dark active:scale-[0.98] transition-all lg:h-9 lg:px-5"
+                            className="group inline-flex h-8 items-center gap-2 rounded-xl bg-primary px-4 text-[13px] font-black text-card hover:bg-primary-dark active:scale-[0.98] transition-all lg:h-9 lg:px-5"
                         >
                             Começar
-                            <ArrowRight className="h-4 w-4" />
+                            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                         </button>
                     </div>
 
@@ -200,11 +216,19 @@ export default function LandingPage() {
             </header>
 
             <main>
-                <section className="relative overflow-hidden border-b border-border bg-card pt-24 sm:pt-28">
-                    <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_42%,#eef6ff_100%)]" />
+                <section ref={heroRef} className="relative overflow-hidden border-b border-border bg-card pt-24 sm:pt-28">
+                    <motion.div
+                        className="landing-hero-gradient absolute inset-0"
+                        style={prefersReducedMotion ? undefined : { y: heroBackdropY, opacity: heroBackdropOpacity }}
+                    />
                     <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
                         <div className="grid gap-10 py-12 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-16">
-                            <div>
+                            <motion.div
+                                initial={false}
+                                animate={prefersReducedMotion ? undefined : { opacity: contentReady ? 1 : 0, y: contentReady ? 0 : 24 }}
+                                transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+                                style={prefersReducedMotion ? undefined : { y: heroTextY }}
+                            >
                                 <p className="relative mb-2 inline-flex items-center rounded-2xl border border-brand-100 bg-card px-5 py-2.5 text-sm font-black text-primary-dark">
                                     Planos a partir de R$99
                                     <span className="absolute -bottom-1 left-6 h-2.5 w-2.5 rotate-45 border-b border-r border-brand-100 bg-card" />
@@ -219,14 +243,14 @@ export default function LandingPage() {
                                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                                     <button
                                         onClick={start}
-                                        className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-black text-card hover:bg-primary-dark active:scale-[0.98] transition-all"
+                                        className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-black text-card hover:bg-primary-dark hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300"
                                     >
                                         Começar teste
-                                        <ArrowRight className="h-4 w-4" />
+                                        <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                     </button>
                                     <a
                                         href="#solucao"
-                                        className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-black text-text-secondary hover:border-brand-200 hover:text-primary-dark transition-colors"
+                                        className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-black text-text-secondary hover:border-brand-200 hover:text-primary-dark hover:-translate-y-0.5 transition-all duration-300"
                                     >
                                         Ver como funciona
                                     </a>
@@ -234,15 +258,22 @@ export default function LandingPage() {
 
                                 <div className="mt-7 flex flex-wrap gap-2">
                                     {assurances.map((item) => (
-                                        <span key={item} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-text-secondary">
+                                        <span key={item} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-text-secondary transition-colors hover:border-brand-200">
                                             <Check className="h-3.5 w-3.5 text-success" />
                                             {item}
                                         </span>
                                     ))}
                                 </div>
-                            </div>
+                            </motion.div>
 
-                            <div className="relative rounded-2xl sm:bg-card sm:pb-10" aria-label="Demonstração do Romaneio Rápido">
+                            <motion.div
+                                className="relative rounded-2xl sm:bg-card sm:pb-10"
+                                aria-label="Demonstração do Romaneio Rápido"
+                                initial={false}
+                                animate={prefersReducedMotion ? undefined : { opacity: contentReady ? 1 : 0, y: contentReady ? 0 : 30, scale: contentReady ? 1 : 0.98 }}
+                                transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                                style={prefersReducedMotion ? undefined : { y: heroVisualY, rotate: heroVisualRotate }}
+                            >
                                 <div className="relative flex justify-center sm:block rounded-2xl sm:border sm:border-border sm:bg-card sm:[perspective:1100px]">
                                     <img
                                         src={heroTeamImage}
@@ -251,7 +282,7 @@ export default function LandingPage() {
                                     />
                                     <RomaneioImagePreview />
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
                     </div>
                 </section>
@@ -260,7 +291,7 @@ export default function LandingPage() {
                     className="border-b border-primary-dark bg-primary py-6 sm:py-8 text-card"
                 >
                     <div className="mx-auto grid max-w-[90rem] gap-4 sm:gap-6 px-4 sm:px-6 lg:grid-cols-[auto_1fr] lg:items-center lg:px-8">
-                        <div className="flex justify-center lg:justify-start">
+                        <ScrollReveal className="flex justify-center lg:justify-start" intensity="soft">
                             <div className="flex -space-x-2 sm:-space-x-3">
                                 {userPhotos.map((photo, index) => (
                                     <div
@@ -282,16 +313,16 @@ export default function LandingPage() {
                                     +
                                 </div>
                             </div>
-                        </div>
+                        </ScrollReveal>
 
-                        <div className="text-center lg:text-left">
+                        <ScrollReveal className="text-center lg:text-left" intensity="soft">
                             <p className="text-xl font-black tracking-tight sm:text-3xl">
                                 +1.500 usuários organizam estoque e romaneios com o Romaneio Rápido
                             </p>
                             <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-bold text-brand-50/90">
                                 Uma rotina mais clara para cadastrar produtos, separar pedidos e registrar saídas sem complicação.
                             </p>
-                        </div>
+                        </ScrollReveal>
                     </div>
                 </section>
 
@@ -300,16 +331,16 @@ export default function LandingPage() {
                     className="border-b border-border bg-background py-16 sm:py-20"
                 >
                     <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
-                        <div>
+                        <ScrollReveal>
                             <SectionHeader
                                 label="Como funciona"
                                 title="Do produto lido ao romaneio pronto, sem perder o ritmo."
                                 desc="O sistema organiza cadastro, estoque, movimentações e documentos de saída para quem precisa trabalhar com velocidade."
                             />
-                        </div>
+                        </ScrollReveal>
 
                         <div className="mt-10 grid gap-6 lg:grid-cols-[0.94fr_1.06fr] lg:items-stretch">
-                            <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
+                            <ScrollReveal className="hover-lift relative overflow-hidden rounded-2xl border border-border bg-card" intensity="deep">
                                 <img
                                     src={operationImage}
                                     alt="Parceiros de negócio revisando pedidos no computador"
@@ -328,13 +359,13 @@ export default function LandingPage() {
                                         ))}
                                     </div>
                                 </div>
-                            </div>
+                            </ScrollReveal>
 
                             <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
                                 {flowSteps.map((step, index) => (
-                                    <div key={step.title}>
+                                    <ScrollReveal key={step.title} delay={index * 0.08}>
                                         <FeatureCard icon={step.icon} title={step.title} desc={step.desc} index={index + 1} />
-                                    </div>
+                                    </ScrollReveal>
                                 ))}
                             </div>
                         </div>
@@ -346,30 +377,30 @@ export default function LandingPage() {
                     className="border-b border-border bg-card py-12 sm:py-16"
                 >
                     <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
-                        <div
-                            className="mb-8 flex items-center gap-4 sm:mb-10"
-                        >
+                        <ScrollReveal className="mb-8 flex items-center gap-4 sm:mb-10" intensity="soft">
                             <span className="h-8 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
                             <h2 className="text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
                                 <span className="text-primary">Nossos</span> Recursos
                             </h2>
-                        </div>
+                        </ScrollReveal>
 
                         <div className="grid gap-6 lg:grid-cols-[0.62fr_0.38fr] lg:items-center">
-                            <h3
-                                className="max-w-xl text-3xl font-black leading-tight tracking-tight text-text-primary sm:text-4xl"
-                            >
-                                Recursos que transformam seu estoque.
-                            </h3>
+                            <ScrollReveal className="max-w-xl" intensity="deep">
+                                <h3 className="text-3xl font-black leading-tight tracking-tight text-text-primary sm:text-4xl">
+                                    Recursos que transformam seu estoque.
+                                </h3>
+                            </ScrollReveal>
                         </div>
 
                         <div className="mt-10 border-y border-border sm:mt-12">
                             {resources.map((resource, index) => (
-                                <div
+                                <ScrollReveal
                                     key={resource.title}
-                                    className="grid gap-4 border-b border-border py-6 last:border-b-0 sm:grid-cols-[0.15fr_0.45fr_0.4fr] sm:items-center lg:py-8 hover:bg-background/50 transition-colors"
+                                    className="group grid gap-4 border-b border-border py-6 last:border-b-0 sm:grid-cols-[0.15fr_0.45fr_0.4fr] sm:items-center lg:py-8 hover:bg-background/50 transition-colors"
+                                    delay={index * 0.04}
+                                    intensity="soft"
                                 >
-                                    <span className="text-5xl font-black leading-none tracking-tight text-brand-200 sm:text-6xl lg:text-7xl">
+                                    <span className="text-5xl font-black leading-none tracking-tight text-brand-200 transition-colors duration-300 group-hover:text-primary sm:text-6xl lg:text-7xl">
                                         {String(index + 1).padStart(2, '0')}
                                     </span>
                                     <h4 className="text-xl font-black leading-tight tracking-tight text-text-primary">
@@ -378,7 +409,7 @@ export default function LandingPage() {
                                     <p className="text-sm font-semibold leading-6 text-text-secondary sm:text-base">
                                         {resource.desc}
                                     </p>
-                                </div>
+                                </ScrollReveal>
                             ))}
                         </div>
                     </div>
@@ -389,15 +420,15 @@ export default function LandingPage() {
                     className="border-b border-border bg-background py-16 sm:py-20"
                 >
                     <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
-                        <div>
+                        <ScrollReveal>
                             <SectionHeader
                                 label="Planos"
                                 title="Comece pequeno e evolua conforme sua operação cresce."
                                 desc="Planos simples, com teste inicial e limites claros para você escolher sem ruído."
                             />
-                        </div>
+                        </ScrollReveal>
 
-                        <div
+                        <ScrollReveal
                             className="relative mt-8"
                             role="region"
                             aria-label="Planos de assinatura"
@@ -423,7 +454,7 @@ export default function LandingPage() {
                                         key={plan.id}
                                         role="listitem"
                                         aria-label={`Plano ${plan.name}`}
-                                        className={`relative flex w-[280px] shrink-0 snap-center flex-col rounded-2xl border bg-card p-5 sm:w-[320px] sm:p-6 lg:h-full lg:w-auto lg:shrink lg:snap-align-none ${plan.highlight ? 'border-primary ring-1 ring-brand-100' : 'border-border'}`}
+                                        className={`hover-lift relative flex w-[280px] shrink-0 snap-center flex-col rounded-2xl border bg-card p-5 sm:w-[320px] sm:p-6 lg:h-full lg:w-auto lg:shrink lg:snap-align-none ${plan.highlight ? 'border-primary ring-1 ring-brand-100' : 'border-border hover:border-brand-200'}`}
                                     >
                                         {plan.highlight && (
                                             <span className="absolute right-4 top-4 rounded-xl bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-card">
@@ -474,7 +505,7 @@ export default function LandingPage() {
                                     />
                                 ))}
                             </div>
-                        </div>
+                        </ScrollReveal>
                     </div>
                 </section>
 
@@ -485,7 +516,7 @@ export default function LandingPage() {
                     <div className="absolute inset-x-0 top-0 h-px bg-brand-400/50" />
                     <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
                         <div className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center">
-                            <div className="max-w-4xl">
+                            <ScrollReveal className="max-w-4xl" intensity="deep">
                                 <p className="text-xs font-black uppercase tracking-[0.08em] text-brand-300">Pronto para testar</p>
                                 <h2 className="mt-4 max-w-4xl text-3xl font-black tracking-tight sm:text-4xl lg:text-[2.65rem] lg:leading-tight">
                                     Dê uma operação mais organizada para sua empresa ainda hoje.
@@ -502,20 +533,20 @@ export default function LandingPage() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </ScrollReveal>
 
-                            <div className="flex flex-col gap-4 lg:items-end">
+                            <ScrollReveal className="flex flex-col gap-4 lg:items-end" delay={0.08}>
                                 <button
                                     onClick={start}
-                                    className="inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-black text-card hover:bg-primary active:scale-[0.98] transition-all sm:w-auto lg:min-w-64"
+                                    className="group inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-black text-card hover:bg-primary-dark hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 sm:w-auto lg:min-w-64"
                                 >
                                     Acessar o sistema
-                                    <ArrowRight className="h-4 w-4" />
+                                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
                                 <p className="max-w-xs text-center text-xs font-bold leading-5 text-text-secondary/70 lg:text-right">
                                     Comece pelo login e monte seu primeiro romaneio em poucos minutos.
                                 </p>
-                            </div>
+                            </ScrollReveal>
                         </div>
                     </div>
                 </section>
@@ -617,6 +648,39 @@ function LandingWelcomeLoader({ step, isLeaving }: { step: 'fast' | 'welcome'; i
     )
 }
 
+type ScrollRevealProps = HTMLMotionProps<'div'> & {
+    children: ReactNode
+    delay?: number
+    intensity?: 'soft' | 'normal' | 'deep'
+}
+
+function ScrollReveal({ children, className = '', style, delay = 0, intensity = 'normal', ...props }: ScrollRevealProps) {
+    const ref = useRef<HTMLDivElement>(null)
+    const prefersReducedMotion = useReducedMotion()
+    const { scrollYProgress } = useScroll({
+        target: ref,
+        offset: ['start 94%', 'end 12%']
+    })
+    const startY = intensity === 'soft' ? 18 : intensity === 'deep' ? 54 : 34
+    const endY = intensity === 'deep' ? -28 : -14
+    const settlePoint = Math.min(0.58, 0.28 + delay)
+    const y = useTransform(scrollYProgress, [0, settlePoint, 1], [startY, 0, endY])
+    const opacity = useTransform(scrollYProgress, [0, Math.min(0.72, settlePoint + 0.08), 0.96, 1], [0, 1, 1, 0.92])
+    const scale = useTransform(scrollYProgress, [0, settlePoint, 1], [intensity === 'deep' ? 0.96 : 0.985, 1, 0.995])
+    const motionStyle: MotionStyle = { ...style, y, opacity, scale }
+
+    return (
+        <motion.div
+            ref={ref}
+            className={className}
+            style={prefersReducedMotion ? style : motionStyle}
+            {...props}
+        >
+            {children}
+        </motion.div>
+    )
+}
+
 function RomaneioImagePreview() {
     return (
         <div className="relative mx-auto w-full max-w-[300px] rounded-2xl border border-card/80 bg-card/95 p-3 shadow-[0_24px_55px_rgba(15,23,42,0.18),0_8px_18px_rgba(37,99,235,0.12)] sm:absolute sm:-bottom-8 sm:right-5 sm:w-[20.5rem] sm:max-w-none sm:origin-bottom-right sm:rotate-[0.2deg] sm:backdrop-blur-md sm:shadow-[0_24px_55px_rgba(15,23,42,0.28),0_8px_18px_rgba(37,99,235,0.16)] sm:[transform:translateZ(34px)_rotateX(5deg)_rotateY(-8deg)]">
@@ -681,9 +745,9 @@ function SectionHeader({ label, title, desc }: { label: string; title: string; d
 
 function FeatureCard({ icon: Icon, title, desc, index }: { icon: IconType; title: string; desc: string; index: number }) {
     return (
-        <div className="h-full rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand-200">
+        <div className="group hover-lift h-full rounded-2xl border border-border bg-card p-5 hover:border-brand-200">
             <div className="mb-5 flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary transition-transform duration-300 group-hover:scale-110">
                     <Icon className="h-5 w-5" />
                 </div>
                 <span className="text-xs font-black text-text-secondary/50">0{index}</span>

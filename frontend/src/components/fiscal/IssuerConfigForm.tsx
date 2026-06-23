@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Building2, MapPin, Hash } from 'lucide-react'
 import { CnpjInput, CepInput, IeInput } from '@/components/fiscal/MaskedInput'
 import InfoTooltip from '@/components/InfoTooltip'
 import { isValidCEP, isValidCNPJ, stripNonDigits } from '@/utils/masks'
@@ -107,7 +108,7 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <Section title="Dados da empresa">
+            <Section icon={Building2} title="Dados da empresa" subtitle="Identificação do emitente na SEFAZ">
                 <Field label="CNPJ *" hint="Cadastro Nacional da Pessoa Jurídica do emitente (14 dígitos). Identifica sua empresa na NF-e e na SEFAZ.">
                     <CnpjInput value={form.cnpj} onChange={(_, raw) => update('cnpj', raw)} required />
                 </Field>
@@ -140,7 +141,7 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
                 </Field>
             </Section>
 
-            <Section title="Endereço">
+            <Section icon={MapPin} title="Endereço" subtitle="Local do estabelecimento emitente">
                 <Field label="CEP *" hint="Código de Endereçamento Postal do estabelecimento emitente (8 dígitos).">
                     <CepInput value={form.cep} onChange={(_, raw) => update('cep', raw)} required />
                 </Field>
@@ -167,7 +168,7 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
                 </Field>
             </Section>
 
-            <Section title="Numeração e ambiente">
+            <Section icon={Hash} title="Numeração e ambiente" subtitle="Sequência das notas e ambiente da SEFAZ">
                 <Field label="Série padrão *" hint="Agrupa a numeração das notas; normalmente 1. Cada série tem sua própria sequência de números independente.">
                     <Input type="number" value={String(form.serie_padrao)} onChange={(v) => update('serie_padrao', Number(v))} required />
                 </Field>
@@ -194,7 +195,7 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
                 <button
                     type="submit"
                     disabled={saving}
-                    className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-60 transition-colors"
+                    className="px-6 py-3 rounded-xl bg-primary hover:bg-primary-dark text-card font-black disabled:opacity-60 transition-all active:scale-[0.98]"
                 >
                     {saving ? 'Salvando…' : 'Salvar configuração'}
                 </button>
@@ -203,12 +204,20 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
     )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ icon: Icon, title, subtitle, children }: { icon: typeof Building2; title: string; subtitle?: string; children: React.ReactNode }) {
     return (
-        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-4">
-            <h3 className="text-sm sm:text-base font-bold text-text-primary">{title}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
-        </div>
+        <section className="bg-card border border-border rounded-2xl overflow-hidden">
+            <header className="flex items-center gap-2.5 sm:gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-border bg-background/40">
+                <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary">
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                <div className="min-w-0">
+                    <h3 className="text-sm font-black tracking-tight text-text-primary truncate">{title}</h3>
+                    {subtitle && <p className="text-xs font-medium text-text-secondary truncate">{subtitle}</p>}
+                </div>
+            </header>
+            <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
+        </section>
     )
 }
 
