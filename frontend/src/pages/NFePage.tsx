@@ -163,15 +163,15 @@ export default function NFePage() {
 
     return (
         <FiscalAccessGate>
-        <div className="p-6 max-w-6xl mx-auto space-y-6">
-            <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5 sm:space-y-6">
+            <header className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center">
-                        <FileText className="w-6 h-6" />
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-text-primary">Notas Fiscais Eletrônicas</h1>
-                        <p className="text-sm text-text-secondary">
+                        <h1 className="text-lg sm:text-2xl font-bold text-text-primary leading-tight">Notas Fiscais Eletrônicas</h1>
+                        <p className="text-xs sm:text-sm text-text-secondary">
                             {totals.autorizadas} autorizadas · {totals.rascunhos} em rascunho · {totals.rejeitadas} rejeitadas
                         </p>
                     </div>
@@ -185,34 +185,34 @@ export default function NFePage() {
                         }
                         setShowForm((v) => !v)
                     }}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm sm:text-base font-bold transition-colors"
                 >
                     {!hasFiscalConfig ? <Settings2 className="w-4 h-4" /> : showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     {!hasFiscalConfig ? 'Configurar emitente' : showForm ? 'Fechar' : 'Nova NF-e'}
                 </button>
             </header>
 
-            <div className="border border-brand/30 bg-brand/5 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-brand/20 text-brand-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <Info className="w-5 h-5" />
+            <div className="border border-brand/30 bg-brand/5 rounded-2xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-brand/20 text-brand-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Info className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div className="flex-1">
-                    <h2 className="text-base font-bold text-text-primary">Funcionalidade Nova</h2>
-                    <p className="text-sm text-text-secondary mt-2">
+                    <h2 className="text-sm sm:text-base font-bold text-text-primary">Funcionalidade Nova</h2>
+                    <p className="text-xs sm:text-sm text-text-secondary mt-1.5 sm:mt-2">
                         O módulo de Notas Fiscais Eletrônicas foi recentemente lançado. Se encontrar algum erro ou tiver sugestões para melhorar sua experiência, entre em contato com nosso suporte via <a href="https://wa.me/5511920688389" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:text-brand-700 font-semibold underline">WhatsApp</a>.
                     </p>
                 </div>
             </div>
 
             {!hasFiscalConfig && (
-                <div className="border border-warning/30 bg-warning/10 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="border border-warning/30 bg-warning/10 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="flex gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-warning/20 text-warning flex items-center justify-center shrink-0">
-                            <AlertTriangle className="w-5 h-5" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-warning/20 text-warning flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-text-primary">Configuração fiscal pendente</h2>
-                            <p className="text-sm text-text-secondary mt-1">
+                            <h2 className="text-sm sm:text-base font-bold text-text-primary">Configuração fiscal pendente</h2>
+                            <p className="text-xs sm:text-sm text-text-secondary mt-1">
                                 Antes de criar rascunhos de NF-e, cadastre os dados do emitente na Configuração Fiscal.
                             </p>
                         </div>
@@ -220,7 +220,7 @@ export default function NFePage() {
                     <button
                         type="button"
                         onClick={() => navigate('/fiscal/configuracao')}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition-colors"
+                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition-colors shrink-0"
                     >
                         <Settings2 className="w-4 h-4" />
                         Ir para Config. Fiscal
@@ -233,14 +233,14 @@ export default function NFePage() {
             )}
 
             {hasFiscalConfig && !hasValidCertificate && (
-                <div className="border border-warning/30 bg-warning/10 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="border border-warning/30 bg-warning/10 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="flex gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-warning/20 text-warning flex items-center justify-center shrink-0">
-                            <AlertTriangle className="w-5 h-5" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-warning/20 text-warning flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-text-primary">Certificado A1 pendente</h2>
-                            <p className="text-sm text-text-secondary mt-1">
+                            <h2 className="text-sm sm:text-base font-bold text-text-primary">Certificado A1 pendente</h2>
+                            <p className="text-xs sm:text-sm text-text-secondary mt-1">
                                 Para emitir NF-e, envie um Certificado Digital A1 válido da empresa na Configuração Fiscal.
                             </p>
                         </div>
@@ -248,7 +248,7 @@ export default function NFePage() {
                     <button
                         type="button"
                         onClick={() => navigate('/fiscal/configuracao')}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition-colors"
+                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition-colors shrink-0"
                     >
                         <Settings2 className="w-4 h-4" />
                         Enviar certificado
@@ -256,7 +256,8 @@ export default function NFePage() {
                 </div>
             )}
 
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            {/* Desktop: tabela */}
+            <div className="hidden md:block bg-card border border-border rounded-2xl overflow-hidden">
                 <table className="w-full text-sm">
                     <thead className="bg-background/60">
                         <tr className="text-left text-text-secondary">
@@ -318,6 +319,54 @@ export default function NFePage() {
                 </table>
             </div>
 
+            {/* Mobile: lista de cartões */}
+            <div className="md:hidden space-y-3">
+                {items.length === 0 && (
+                    <div className="bg-card border border-border rounded-2xl px-4 py-10 text-center text-sm text-text-secondary">
+                        Nenhuma NF-e cadastrada ainda.
+                    </div>
+                )}
+                {items.map((nfe) => (
+                    <div key={nfe.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className="font-bold text-text-primary truncate">{nfe.destinatario_nome}</div>
+                                <div className="text-xs text-text-secondary truncate">{nfe.destinatario_documento}</div>
+                            </div>
+                            <StatusPill status={nfe.status} motivo={nfe.motivo_rejeicao} />
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-text-secondary">
+                                NF-e <span className="font-bold text-text-primary">{nfe.numero > 0 ? nfe.numero : '—'}</span>
+                                <span className="text-xs">/{nfe.serie}</span>
+                            </span>
+                            <span className="font-bold text-text-primary">
+                                {nfe.valor_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                            {(nfe.status === 'rascunho' || nfe.status === 'rejeitada') && (
+                                <button
+                                    onClick={() => requestIssue(nfe)}
+                                    disabled={issuingId === nfe.id}
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold disabled:opacity-60"
+                                >
+                                    <Send className="w-3.5 h-3.5" />
+                                    {issuingId === nfe.id ? 'Enviando…' : 'Emitir'}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => handlePreview(nfe)}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-text-primary hover:bg-background text-xs font-bold"
+                            >
+                                <Printer className="w-3.5 h-3.5" />
+                                DANFE
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
             <ConfirmModal
                 isOpen={confirmNfe !== null}
                 onClose={() => setConfirmNfe(null)}
@@ -340,19 +389,19 @@ export default function NFePage() {
 
 function DanfePreviewView({ data, onClose }: { data: DanfeData; onClose: () => void }) {
     return (
-        <div className="min-h-screen bg-background py-8">
-            <div className="max-w-[210mm] mx-auto mb-4 flex items-center justify-between print:hidden">
+        <div className="min-h-screen bg-background py-4 sm:py-8 px-3 sm:px-0">
+            <div className="max-w-[210mm] mx-auto mb-4 flex items-center justify-between gap-3 print:hidden">
                 <button
                     onClick={onClose}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-text-primary hover:bg-card text-sm font-bold"
+                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-border text-text-primary hover:bg-card text-sm font-bold"
                 >
-                    <X className="w-4 h-4" /> Fechar prévia
+                    <X className="w-4 h-4" /> <span className="hidden sm:inline">Fechar prévia</span><span className="sm:hidden">Fechar</span>
                 </button>
                 <button
                     onClick={() => window.print()}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold"
+                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold"
                 >
-                    <Printer className="w-4 h-4" /> Imprimir (A4)
+                    <Printer className="w-4 h-4" /> Imprimir <span className="hidden sm:inline">(A4)</span>
                 </button>
             </div>
             <DanfeDocument data={data} />
