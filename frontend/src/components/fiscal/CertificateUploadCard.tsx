@@ -72,10 +72,10 @@ export default function CertificateUploadCard() {
     }
 
     return (
-        <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-5">
             <header className="flex items-center justify-between gap-3">
                 <div>
-                    <h3 className="text-base font-bold text-text-primary">Certificado Digital A1</h3>
+                    <h3 className="text-sm sm:text-base font-bold text-text-primary">Certificado Digital A1</h3>
                     <p className="text-xs text-text-secondary mt-1">
                         Arquivo .pfx armazenado criptografado em repouso. Necessário para assinar XMLs da NF-e.
                     </p>

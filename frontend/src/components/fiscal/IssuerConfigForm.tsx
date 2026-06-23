@@ -205,8 +205,8 @@ export default function IssuerConfigForm({ initialValue, saving, onSubmit }: Pro
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-            <h3 className="text-base font-bold text-text-primary">{title}</h3>
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-4">
+            <h3 className="text-sm sm:text-base font-bold text-text-primary">{title}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
         </div>
     )

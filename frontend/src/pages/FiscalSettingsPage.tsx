@@ -65,14 +65,14 @@ export default function FiscalSettingsPage() {
 
     return (
         <FiscalAccessGate>
-        <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5 sm:space-y-6">
             <header className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6" />
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-4 h-4 sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-text-primary">Módulo Fiscal</h1>
-                    <p className="text-sm text-text-secondary">
+                    <h1 className="text-lg sm:text-2xl font-bold text-text-primary leading-tight">Módulo Fiscal</h1>
+                    <p className="text-xs sm:text-sm text-text-secondary">
                         Configure o emitente e gerencie o certificado A1 para emissão de NF-e.
                     </p>
                 </div>
